@@ -197,16 +197,6 @@ variables += ["parton_q2_pt/F",  "parton_q2_eta/F",  "parton_q2_phi/F",  "parton
 variables += ["parton_b_pt/F",   "parton_b_eta/F",   "parton_b_phi/F",   "parton_b_mass/F",   "parton_b_pdgId/I"]
 variables += ["parton_W_pt/F",   "parton_W_eta/F",   "parton_W_phi/F",   "parton_W_mass/F"]
 
-if args.delphesEra is not None:
-    variables += ["delphesJet_pt/F", "delphesJet_eta/F", "delphesJet_phi/F", "delphesJet_mass/F", "delphesJet_nConstituents/I"] 
-    variables += ['delphesJet_SDmass/F', 
-                  'delphesJet_SDsubjet0_eta/F', 'delphesJet_SDsubjet0_deltaEta/F', 'delphesJet_SDsubjet0_phi/F', 'delphesJet_SDsubjet0_deltaPhi/F', 'delphesJet_SDsubjet0_deltaR/F', 'delphesJet_SDsubjet0_mass/F', 
-                  'delphesJet_SDsubjet1_eta/F', 'delphesJet_SDsubjet1_deltaEta/F', 'delphesJet_SDsubjet1_phi/F', 'delphesJet_SDsubjet1_deltaPhi/F', 'delphesJet_SDsubjet1_deltaR/F', 'delphesJet_SDsubjet1_mass/F', 
-                  'delphesJet_tau1/F', 'delphesJet_tau2/F', 'delphesJet_tau3/F', 'delphesJet_tau4/F', 'delphesJet_tau21/F', 'delphesJet_tau32/F']
-    for i_ecf, (name, _) in enumerate( ecfs ):
-        variables.append( "delphesJet_%s/F"%name )
-    variables += ["dR_delphesJet_q1/F", "dR_delphesJet_q2/F", "dR_delphesJet_W/F", "dR_delphesJet_b/F", "dR_delphesJet_top/F", "dR_delphesJet_maxq1q2b/F"]
-
 variables += ["genJet_pt/F", "genJet_eta/F", "genJet_phi/F", "genJet_mass/F", "genJet_nConstituents/I", "genJet_isMuon/I", "genJet_isElectron/I", "genJet_isPhoton/I"]
 variables += ['genJet_SDmass/F', 
               'genJet_SDsubjet0_eta/F', 'genJet_SDsubjet0_deltaEta/F', 'genJet_SDsubjet0_phi/F', 'genJet_SDsubjet0_deltaPhi/F', 'genJet_SDsubjet0_deltaR/F', 'genJet_SDsubjet0_mass/F', 
@@ -216,8 +206,17 @@ for i_ecf, (name, _) in enumerate( ecfs ):
     variables.append( "genJet_%s/F"%name )
 
 variables += ["dR_genJet_q1/F", "dR_genJet_q2/F", "dR_genJet_W/F", "dR_genJet_b/F", "dR_genJet_top/F", "dR_genJet_maxq1q2b/F"]
-
 variables += ["gen_cand_sum_pt/F"]
+
+if args.delphesEra is not None:
+    variables += ["delphesJet_pt/F", "delphesJet_eta/F", "delphesJet_phi/F", "delphesJet_mass/F", "delphesJet_nConstituents/I"] 
+    variables += ['delphesJet_SDmass/F', 
+                  'delphesJet_SDsubjet0_eta/F', 'delphesJet_SDsubjet0_deltaEta/F', 'delphesJet_SDsubjet0_phi/F', 'delphesJet_SDsubjet0_deltaPhi/F', 'delphesJet_SDsubjet0_deltaR/F', 'delphesJet_SDsubjet0_mass/F', 
+                  'delphesJet_SDsubjet1_eta/F', 'delphesJet_SDsubjet1_deltaEta/F', 'delphesJet_SDsubjet1_phi/F', 'delphesJet_SDsubjet1_deltaPhi/F', 'delphesJet_SDsubjet1_deltaR/F', 'delphesJet_SDsubjet1_mass/F', 
+                  'delphesJet_tau1/F', 'delphesJet_tau2/F', 'delphesJet_tau3/F', 'delphesJet_tau4/F', 'delphesJet_tau21/F', 'delphesJet_tau32/F']
+    for i_ecf, (name, _) in enumerate( ecfs ):
+        variables.append( "delphesJet_%s/F"%name )
+    variables += ["dR_delphesJet_q1/F", "dR_delphesJet_q2/F", "dR_delphesJet_W/F", "dR_delphesJet_b/F", "dR_delphesJet_top/F", "dR_delphesJet_maxq1q2b/F"]
 
 if args.addReweights:
     # for each Wilson coefficient listed in args.trainingCoefficients, store a separate length-3 ntuple of ('w0'*10**6, 'w1', 'w2') to facilitate particle-net training 
