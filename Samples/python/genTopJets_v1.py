@@ -27,8 +27,8 @@ gridpack_directory = "/eos/vbc/group/cms/robert.schoefbeck/gridpacks/ParticleNet
 tt1LepHad_test = FWLiteSample.fromFiles("tt1LepHad_test", ["/eos/vbc/group/cms/robert.schoefbeck/ParticleNet/test/GEN_LO_0j_102X.root"])
 tt1LepHad_test.reweight_pkl = os.path.join(gridpack_directory, "tt01j-1l-NPtHad_HT800_slc7_amd64_gcc700_CMSSW_10_6_19_tarball.pkl")
 
-tmp = FWLiteSample.fromFiles("GEN", ["/users/robert.schoefbeck/CMS/CMSSW_10_6_27/src/Samples/cfg/GEN_LO_0j_102X.root"]) 
-tmp.reweight_pkl = "/users/robert.schoefbeck/t-sch-RefPoint-noWidthRW_reweight_card.pkl" 
+tmp = FWLiteSample.fromFiles("GEN", ["/users/robert.schoefbeck/CMS/CMSSW_10_6_27/src/Samples/crab/gen/GEN_LO_0j_102X.root"]) 
+tmp.reweight_pkl = "/eos/vbc/group/cms/robert.schoefbeck/gridpacks/ParticleNet/TT01jDebug_reweight_card.pkl" 
 
 tsch_test = FWLiteSample.fromFiles("tsch_test", ["/eos/vbc/group/cms/robert.schoefbeck/ParticleNet/test-tsch/GEN_LO_0j_102X.root"])
 tsch_test.reweight_pkl = os.path.join(gridpack_directory, "t-sch_reweight_card.pkl")

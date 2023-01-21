@@ -223,25 +223,30 @@ if args.addReweights:
     for coefficient in args.trainingCoefficients:    
         variables += [VectorTreeVariable.fromString("%s[coeff/F]"%coefficient, nMax=3 )]
 
+# enumeration according to PF type: https://github.com/cms-sw/cmssw/blob/master/DataFormats/ParticleFlowCandidate/interface/PFCandidate.h#L44-L52
 categories = [
-    {'name':'e',   'eflow_func':lambda p:abs(p['pdgId'])==11, 'gen_func':lambda p:abs(p.pdgId())==11}, #electrons 
-    {'name':'mu',  'eflow_func':lambda p:abs(p['pdgId'])==13, 'gen_func':lambda p:abs(p.pdgId())==13}, #muons 
-    {'name':'ph',  'eflow_func':lambda p:abs(p['pdgId'])==22, 'gen_func':lambda p:p.pdgId()==22}, #photons 
-    {'name':'chh', 'eflow_func':lambda p:abs(p['pdgId'])>100 and p['charge']!=0, 'gen_func':lambda p:abs(p.pdgId())>100 and p.charge()!=0 }, #charged hadrons 
-    {'name':'neh', 'eflow_func':lambda p:abs(p['pdgId'])>100 and p['charge']==0, 'gen_func':lambda p:abs(p.pdgId())>100 and p.charge()==0 }, # neutral hadrons
+    {'name':'e',   'type':2, 'eflow_func':lambda p:abs(p['pdgId'])==11, 'gen_func':lambda p:abs(p['pdgId'])==11}, #electrons 
+    {'name':'mu',  'type':3, 'eflow_func':lambda p:abs(p['pdgId'])==13, 'gen_func':lambda p:abs(p['pdgId'])==13}, #muons 
+    {'name':'ph',  'type':4, 'eflow_func':lambda p:abs(p['pdgId'])==22, 'gen_func':lambda p:p['pdgId']==22}, #photons 
+    {'name':'chh', 'type':1, 'eflow_func':lambda p:abs(p['pdgId'])>100 and p['charge']!=0, 'gen_func':lambda p:abs(p['pdgId'])>100 and p['charge']!=0 }, #charged hadrons 
+    {'name':'neh', 'type':5, 'eflow_func':lambda p:abs(p['pdgId'])>100 and p['charge']==0, 'gen_func':lambda p:abs(p['pdgId'])>100 and p['charge']==0 }, # neutral hadrons
 ]
 
-cand_vars           =  "pt/F,etarel/F,phirel/F,eta/F,phi/F,pdgId/I"
-cand_varnames       =  varnames( cand_vars )
-cand_ch_vars        =  "pt/F,etarel/F,phirel/F,eta/F,phi/F,pdgId/I,charge/I"
-cand_ch_varnames    =  varnames( cand_ch_vars )
-for cat in categories:
-    if cat['name'] in ['ph', 'neh']:
-        variables.append( VectorTreeVariable.fromString("gen_%s[%s]"%(cat['name'], cand_vars), nMax=1000 ) )
-        variables.append( VectorTreeVariable.fromString("eflow_%s[%s]"%(cat['name'], cand_vars), nMax=100 ) )
-    else:
-        variables.append( VectorTreeVariable.fromString("gen_%s[%s]"%(cat['name'], cand_ch_vars), nMax=1000 ) )
-        variables.append( VectorTreeVariable.fromString("eflow_%s[%s]"%(cat['name'], cand_ch_vars), nMax=100 ) )
+#cand_vars           =  "pt/F,etarel/F,phirel/F,eta/F,phi/F,pdgId/I"
+#cand_varnames       =  varnames( cand_vars )
+cand_vars        =  "pt/F,etarel/F,phirel/F,eta/F,phi/F,pdgId/I,charge/I,type/I"
+cand_varnames    =  varnames( cand_vars )
+
+nCandMax = 200
+variables.append(VectorTreeVariable.fromString("gen[%s]"%(cand_vars), nMax=nCandMax ))
+variables.append(VectorTreeVariable.fromString("eflow[%s]"%(cand_vars), nMax=nCandMax ))
+#for cat in categories:
+#    if cat['name'] in ['ph', 'neh']:
+#        variables.append( VectorTreeVariable.fromString("gen_%s[%s]"%(cat['name'], cand_vars), nMax=1000 ) )
+#        variables.append( VectorTreeVariable.fromString("eflow_%s[%s]"%(cat['name'], cand_vars), nMax=100 ) )
+#    else:
+#        variables.append( VectorTreeVariable.fromString("gen_%s[%s]"%(cat['name'], cand_vars), nMax=1000 ) )
+#        variables.append( VectorTreeVariable.fromString("eflow_%s[%s]"%(cat['name'], cand_vars), nMax=100 ) )
 
 logger.info( "Running over files: %s", ", ".join(sample.files ) )
 
@@ -528,18 +533,20 @@ def filler( event ):
 
                 event.dR_delphesJet_maxq1q2b = max( [ event.dR_delphesJet_q1, event.dR_delphesJet_q2, event.dR_delphesJet_b ] )
 
-                eflow_jet = [ eflow_event[p.user_index()] for p in matched_delphesJet.constituents()[:100] ]
+                eflow_jet = [ eflow_event[p.user_index()] for p in matched_delphesJet.constituents() ]
                 eflow_jet.sort(key = lambda p:-p['pt'] )
+                eflow_jet = eflow_jet[:nCandMax]
                 for p in eflow_jet:
                     p['phirel'] = deltaPhi(matched_delphesJet.phi(), p['phi'], returnAbs=False)
                     p['etarel'] = p['eta'] - matched_delphesJet.eta() 
-
+                    if not p.has_key('charge'):p['charge']=0
                 for cat in categories:
-                    cands = filter( cat['eflow_func'], eflow_jet )
-                    if cat['name'] in ['ph', 'neh']:
-                        fill_vector_collection( event, "eflow_"+cat['name'], cand_varnames, cands)
-                    else:
-                        fill_vector_collection( event, "eflow_"+cat['name'], cand_ch_varnames, cands)
+                    for cand in filter( cat['eflow_func'], eflow_jet ):
+                        cand['type'] = cat['type']
+                        if cat['name'] in ['ph', 'neh']:
+                            cand['charge'] = 0
+
+                fill_vector_collection( event, "eflow", cand_varnames, eflow_jet)
 
                 # softdrop
                 eflowCandsVec = ROOT.vector("TLorentzVector")()
@@ -604,22 +611,19 @@ def filler( event ):
 
             event.dR_genJet_maxq1q2b = max( [ event.dR_genJet_q1, event.dR_genJet_q2, event.dR_genJet_b ] )
 
-            count = 0 
+            cands_list = [ {'pt':c.pt(), 'eta':c.eta(), 'phi':c.phi(), 'charge':c.charge(), 'pdgId':c.pdgId()} for c in gen_particles ]
+            cands_list.sort( key = lambda p:-p['pt'] )
+            cands_list = cands_list[:nCandMax]
+            for p in cands_list:
+                p['phirel'] = deltaPhi(event.genJet_phi, p['phi'], returnAbs=False)
+                p['etarel'] = p['eta'] - event.genJet_eta
             for cat in categories:
-                cands = filter( cat['gen_func'], gen_particles )
-                cands_list = [ {'pt':c.pt(), 'eta':c.eta(), 'phi':c.phi(), 'charge':c.charge(), 'pdgId':c.pdgId()} for c in cands ]
-                for p in cands_list:
-                    p['phirel'] = deltaPhi(event.genJet_phi, p['phi'], returnAbs=False)
-                    p['etarel'] = p['eta'] - event.genJet_eta
+                for cand in filter( cat['gen_func'], cands_list ):
+                    cand['type'] = cat['type']
+                    if cat['name'] in ['ph', 'neh']:
+                        cand['charge'] = 0
 
-                cands_list.sort( key = lambda p:-p['pt'] )
-                addIndex( cands_list )
-                if cat['name'] in ['ph', 'neh']:
-                    fill_vector_collection( event, "gen_"+cat['name'], cand_varnames, cands_list)
-                else:
-                    fill_vector_collection( event, "gen_"+cat['name'], cand_ch_varnames, cands_list)
-                count+=len(cands)
-            assert count == len( gen_particles ), "Missing a gen particle in categorization!!"
+            fill_vector_collection( event, "gen", cand_varnames, cands_list)
 
             # softdrop
             genCandsVec = ROOT.vector("TLorentzVector")()
