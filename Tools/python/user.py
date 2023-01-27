@@ -3,6 +3,7 @@ import os
 if os.environ['USER'] in ['robert.schoefbeck']:
 
     skim_output_directory               = "/scratch-cbe/users/robert.schoefbeck/HadronicSMEFT/postprocessed/"
+    tmp_output_directory                = "/scratch/users/robert.schoefbeck/tmp_pp_dir/HadronicSMEFT//"
     plot_directory                      = "/groups/hephy/cms/robert.schoefbeck/www/HadronicSMEFT/"
 
     gridpack_directory                  = "/eos/vbc/user/robert.schoefbeck/gridpacks/"

@@ -9,19 +9,6 @@ import ROOT
 from RootTools.core.DelphesReaderBase import DelphesReaderBase
 
 class DelphesReader( DelphesReaderBase ): # version RootTools reader
-#class DelphesReader: # version Suchtia-reader
-
-#    def __init__( self, filename ):
-#        ''' Return a Suchita-reader
-#        '''
-#        self.reader =  ROOT.DelphesRecoClass(filename)
-
-    # Read a vector collection from the Delphes reader
-#    def read_collection( self, collection, variables ):
-#        ''' read delphes collection and rename leaves'''
-#        nColl   = getattr( self.reader, collection+"_size" )
-#        buffers = {var_old: getattr( self.reader, collection+'_'+var_old) for var_old, var_new in variables}
-#        return [{var_new:buffers[var_old][i] for var_old, var_new in variables} for i in range(nColl)]
 
     def EFlowTrack( self ):
         return self.read_collection( 'EFlowTrack', 
@@ -51,6 +38,54 @@ class DelphesReader( DelphesReaderBase ): # version RootTools reader
             c['charge']=0
             c['pdgId']=130
         return coll
+
+    def muons( self ):
+        res = self.read_collection( 'Muon',
+            [   ('PT', 'pt'), ( 'Eta', 'eta'), ('Phi', 'phi'),
+                ('Charge', 'charge'), ('IsolationVar', 'isolationVar'), ('IsolationVarRhoCorr', 'isolationVarRhoCorr'),
+                ('SumPtCharged', 'sumPtCharged'),  ('SumPtNeutral', 'sumPtNeutral'), ('SumPtChargedPU', 'sumPtChargedPU'),  ('SumPt', 'sumPt')
+            ])
+        for r in res:
+            r['pdgId'] = -13*r['charge']
+            r['ehadOverEem'] = float('nan')
+        return res
+
+    def electrons( self ):
+        res = self.read_collection( 'Electron',
+            [   ('PT', 'pt'), ( 'Eta', 'eta'), ('Phi', 'phi'),
+                ('Charge', 'charge'), ('IsolationVar', 'isolationVar'), ('IsolationVarRhoCorr', 'isolationVarRhoCorr'),
+                ('SumPtCharged', 'sumPtCharged'),  ('SumPtNeutral', 'sumPtNeutral'), ('SumPtChargedPU', 'sumPtChargedPU'),  ('SumPt', 'sumPt'),
+                ('EhadOverEem','ehadOverEem')
+            ])
+        for r in res:
+            r['pdgId'] = -11*r['charge']
+        return res
+
+    def jets( self ):
+        return self.read_collection( 'Jet',
+            [   ('PT', 'pt'), ( 'Eta', 'eta'), ('Phi', 'phi'),
+                ('BTag', 'bTag'), ( 'BTagPhys', 'bTagPhys'), ('Flavor', 'flavor'),
+                ('NCharged', 'nCharged'), ('NNeutrals', 'nNeutrals'),
+            ])
+
+    def genJets( self ):
+        return self.read_collection( 'GenJet',
+            [   ('PT', 'pt'), ( 'Eta', 'eta'), ('Phi', 'phi'),
+            ])
+
+    #def photons( self ):
+    #    return self.read_collection( 'Photon',
+    #        [   ('PT', 'pt'), ( 'Eta', 'eta'), ('Phi', 'phi'),
+    #            ('IsolationVar', 'isolationVar'), ('IsolationVarRhoCorr', 'isolationVarRhoCorr'),
+    #            ('SumPtCharged', 'sumPtCharged'),  ('SumPtNeutral', 'sumPtNeutral'), ('SumPtChargedPU', 'sumPtChargedPU'),  ('SumPt', 'sumPt'),
+    #            ('EhadOverEem','ehadOverEem')
+    #        ])
+
+    def met( self ):
+        return self.read_collection( 'MissingET', [('MET', 'pt'), ('Phi', 'phi')] )
+
+    def genMet( self ):
+        return self.read_collection( 'GenMissingET', [('MET', 'pt'), ('Phi', 'phi')] )
 
 
 #OBJ: TObjArray  TObjArray   An array of objects : 0
