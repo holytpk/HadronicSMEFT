@@ -233,7 +233,6 @@ variables += ["parton_nu_pt/F",       "parton_nu_eta/F",       "parton_nu_phi/F"
 variables += ["parton_lepTop_b_pt/F", "parton_lepTop_b_eta/F", "parton_lepTop_b_phi/F", "parton_lepTop_b_mass/F", "parton_lepTop_b_pdgId/I"]
 variables += ["parton_lepTop_W_pt/F", "parton_lepTop_W_eta/F", "parton_lepTop_W_phi/F", "parton_lepTop_W_mass/F", "parton_lepTop_W_pdgId/I"]
 
-
 variables += ["parton_cosThetaPlus_n/F", "parton_cosThetaMinus_n/F", "parton_cosThetaPlus_r/F", "parton_cosThetaMinus_r/F", "parton_cosThetaPlus_k/F", "parton_cosThetaMinus_k/F", 
               "parton_cosThetaPlus_r_star/F", "parton_cosThetaMinus_r_star/F", "parton_cosThetaPlus_k_star/F", "parton_cosThetaMinus_k_star/F",
               "parton_xi_nn/F", "parton_xi_rr/F", "parton_xi_kk/F", 
@@ -520,6 +519,8 @@ def filler( event ):
     lepTop_partons.sort( key=lambda t:-t['pt'] )
     lepTop_parton = lepTop_partons[0] if len(lepTop_partons)>0 else None
 
+    #print "had",len(hadTop_partons), "lep", len(lepTop_partons)
+
     # make AK8 jets from Delphes EFlow
     eflow_event = delphesReader.EFlowTrack()+delphesReader.EFlowNeutralHadron()+delphesReader.EFlowPhoton()
     eflow_event.sort( key=lambda p:-p['pt'] )
@@ -592,9 +593,12 @@ def filler( event ):
              setattr(event, "delphesJet_"+name, result[i_ecf] )
 
         delphesJet_dict       = {'eta':event.delphesJet_eta, 'phi':event.delphesJet_phi}
-        closest_hadTop_parton = min( hadTop_partons, key=lambda p: deltaR( delphesJet_dict, p) )
-        matched_hadTop_parton = closest_hadTop_parton if deltaR( closest_hadTop_parton, delphesJet_dict )<0.6 else None
-
+        try:
+            closest_hadTop_parton = min( hadTop_partons, key=lambda p: deltaR( delphesJet_dict, p) )
+            matched_hadTop_parton = closest_hadTop_parton if deltaR( closest_hadTop_parton, delphesJet_dict )<0.6 else None
+        except ValueError:
+            matched_hadTop_parton, closest_hadTop_parton = None, None
+            
         if matched_hadTop_parton is not None:
             event.delphesJet_dR_matched_hadTop_parton = deltaR( delphesJet_dict, matched_hadTop_parton) 
             event.delphesJet_dR_lepTop_parton         = deltaR( delphesJet_dict, lepTop_parton) 

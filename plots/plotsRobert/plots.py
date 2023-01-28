@@ -31,10 +31,10 @@ from HadronicSMEFT.Tools.delphesCutInterpreter import cutInterpreter
 # Arguments
 import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
-argParser.add_argument('--logLevel',           action='store',      default='INFO',          nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE', 'NOTSET'], help="Log level for logging")
-argParser.add_argument('--plot_directory',     action='store',      default='delphes')
-argParser.add_argument('--selection',          action='store',      default='singlelep-AK8pt500-AK8merged-njet4p-btag1p')
-argParser.add_argument('--sample',             action='store',      default='TT01j', choices = ['TT01j'])
+argParser.add_argument('--logLevel',           action='store',      default='INFO', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE', 'NOTSET'], help="Log level for logging")
+argParser.add_argument('--plot_directory',     action='store',      default='delphes-v3')
+argParser.add_argument('--selection',          action='store',      default=None)
+argParser.add_argument('--sample',             action='store',      default='TT01j1l_HT800',)
 argParser.add_argument('--small',                                   action='store_true',     help='Run only on a small subset of the data?')
 argParser.add_argument('--reweight',                                action='store_true',     help='Reweight jet pt?')
 
@@ -46,9 +46,10 @@ import RootTools.core.logger as logger_rt
 logger    = logger.get_logger(   args.logLevel, logFile = None)
 logger_rt = logger_rt.get_logger(args.logLevel, logFile = None)
 
-plot_directory = os.path.join(plot_directory, args.plot_directory,  args.sample )
-if args.small: plot_directory += "_small"
-if args.reweight: plot_directory += "_reweight"
+if args.small:         plot_directory += "_small"
+if args.reweight: args.plot_directory += "-reweight"
+
+plot_directory = os.path.join(plot_directory, args.plot_directory,  args.sample, args.selection if args.selection is not None else "inc")
 
 # Import samples
 import HadronicSMEFT.Samples.genTopJets_v1_pp as samples

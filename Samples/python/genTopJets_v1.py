@@ -30,6 +30,16 @@ tt1LepHad_test.reweight_pkl = os.path.join(gridpack_directory, "tt01j-1l-NPtHad_
 TT01jDebug = FWLiteSample.fromDAS("TT01jDebug", "/PNet/schoef-PNet-af3a260270385fd3f7df95e2de8dce51/USER", dbFile=dbFile, instance="phys03", prefix="root://eos.grid.vbc.ac.at/")
 TT01jDebug.reweight_pkl = "/eos/vbc/group/cms/robert.schoefbeck/gridpacks/ParticleNet/TT01jDebug_reweight_card.pkl" 
 
+TT01j1l = FWLiteSample.fromDAS("TT01j1l", "/PNet_TT01j1l/schoef-PNet_TT01j1l-c64478b79b2fe2c66cf5b1ff13d188f0/USER", dbFile=dbFile, instance="phys03", prefix="root://eos.grid.vbc.ac.at/")
+TT01j1l.reweight_pkl = "/eos/vbc/group/cms/robert.schoefbeck/gridpacks/ParticleNet/TT01jDebug_reweight_card.pkl" 
+#
+#TT01j2l       = FWLiteSample.fromDAS("TT01j2l      ", "/PNet_TT01j2l/schoef-PNet_TT01j2l-a0241147cf6c0844d7923af96307ec5a/USER", dbFile=dbFile, instance="phys03", prefix="root://eos.grid.vbc.ac.at/")
+#TT01j2l.reweight_pkl = "/eos/vbc/group/cms/robert.schoefbeck/gridpacks/ParticleNet/TT01jDebug_reweight_card.pkl" 
+
+TT01j2l_HT800 = FWLiteSample.fromDAS("TT01j2l_HT800", "/PNet_TT01j2l_HT800/schoef-PNet_TT01j2l_HT800-1e05253e09d02ca0e67caa8c74dd84b2/USER", dbFile=dbFile, instance="phys03", prefix="root://eos.grid.vbc.ac.at/")
+TT01j2l_HT800.reweight_pkl = "/eos/vbc/group/cms/robert.schoefbeck/gridpacks/ParticleNet/TT01jDebug_reweight_card.pkl" 
+
+
 #tmp = FWLiteSample.fromFiles("GEN", ["/users/robert.schoefbeck/CMS/CMSSW_10_6_27/src/Samples/crab/gen/GEN_LO_0j_102X.root"]) 
 #tmp.reweight_pkl = "/eos/vbc/group/cms/robert.schoefbeck/gridpacks/ParticleNet/TT01jDebug_reweight_card.pkl" 
 
