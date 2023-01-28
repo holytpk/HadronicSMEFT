@@ -4,7 +4,8 @@
 #
 # Standard imports and batch mode
 #
-import os, sys, imp, shutil, uuid
+import os, sys, imp, uuid
+import copy, shutil
 import ROOT
 ROOT.gROOT.SetBatch(True)
 from math                             import sqrt, cos, sin, pi, acos, cosh, sinh
@@ -234,7 +235,11 @@ variables += ["parton_lepTop_W_pt/F", "parton_lepTop_W_eta/F", "parton_lepTop_W_
 
 
 variables += ["parton_cosThetaPlus_n/F", "parton_cosThetaMinus_n/F", "parton_cosThetaPlus_r/F", "parton_cosThetaMinus_r/F", "parton_cosThetaPlus_k/F", "parton_cosThetaMinus_k/F", 
-              "parton_xi_nn/F", "parton_xi_rr/F", "parton_xi_kk/F", "parton_xi_nk/F", "parton_xi_rn/F", "parton_xi_kr/F", "parton_xi_nr/F", "parton_xi_rk/F", "parton_xi_kn/F"]
+              "parton_cosThetaPlus_r_star/F", "parton_cosThetaMinus_r_star/F", "parton_cosThetaPlus_k_star/F", "parton_cosThetaMinus_k_star/F",
+              "parton_xi_nn/F", "parton_xi_rr/F", "parton_xi_kk/F", 
+              "parton_xi_nr_plus/F", "parton_xi_nr_minus/F", "parton_xi_rk_plus/F", "parton_xi_rk_minus/F", "parton_xi_nk_plus/F", "parton_xi_nk_minus/F", 
+              "parton_cos_phi/F", "parton_cos_phi_lab/F", "parton_abs_delta_phi_ll_lab/F",
+             ] 
 
 variables += ["delphesJet_pt/F", "delphesJet_eta/F", "delphesJet_phi/F", "delphesJet_mass/F", "delphesJet_nConstituents/I"] 
 variables += ['delphesJet_SDmass/F', 
@@ -469,12 +474,13 @@ def filler( event ):
     assert W_partons[0].pdgId()+W_partons[1].pdgId()==0, "W bosons not OS!" 
     assert b_partons[0].pdgId()+b_partons[1].pdgId()==0, "b quarks not OS!" 
 
+    # two lists of Ws and bs -> resolve sorting ambiguity
     # flip sequence of b in case W[0] and b[0] can not come from the same top/anti-top
     if not ( (W_partons[0].pdgId() == 24 and b_partons[0].pdgId() == 5) or (W_partons[0].pdgId() == -24 and b_partons[0].pdgId() == -5) ):
         b_partons.reverse()
         print "Reversed" # never happens because of how MG fills LHE
 
-    # make top quark partons from Ws and bs
+    # make top quark partons from the two lists of W_partons = [W1, W2] and b_partons = [b1, b2] -> t1=W1+b1, t2=W2+b2. The ambiguity is already resolved.
     top_partons = []
     for i_W, W in enumerate(W_partons):
         
@@ -529,8 +535,6 @@ def filler( event ):
     except ValueError:
         delphesJet = None
 
-
-         
     #for i_delphesJet, delphesJet in enumerate(delphesJets):
     #    if delphesJet.pt()>400:
     #        print "AK8", len(delphesJet.constituents()), "mass", delphesJet.m(), delphesJet.pt(), delphesJet.eta(), delphesJet.phi()
@@ -587,7 +591,7 @@ def filler( event ):
         for i_ecf, (name, _) in enumerate( ecfs ):
              setattr(event, "delphesJet_"+name, result[i_ecf] )
 
-        delphesJet_dict = {'eta':event.delphesJet_eta, 'phi':event.delphesJet_phi}
+        delphesJet_dict       = {'eta':event.delphesJet_eta, 'phi':event.delphesJet_phi}
         closest_hadTop_parton = min( hadTop_partons, key=lambda p: deltaR( delphesJet_dict, p) )
         matched_hadTop_parton = closest_hadTop_parton if deltaR( closest_hadTop_parton, delphesJet_dict )<0.6 else None
 
@@ -656,33 +660,39 @@ def filler( event ):
         event.parton_hadTop_W_mass  = hadTop_parton['W'].mass()
         event.parton_hadTop_W_pdgId = hadTop_parton['W'].pdgId()
         
-        # compute theta and phi
+        # compute theta and phi (Suman approved)
         beam = ROOT.TLorentzVector()
         beam.SetPxPyPzE(0,0,6500,6500)
 
         boost_t = hadTop_parton['p4'].BoostVector()
 
-        hadTop_parton['W_p4'].Boost(-boost_t)
-        hadTop_parton['q1_p4'].Boost(-boost_t)
-        hadTop_parton['q2_p4'].Boost(-boost_t)
+        # copy the vectors, originals will still be needed
+        W_p4  = copy.deepcopy(hadTop_parton['W_p4'])
+        q1_p4 = copy.deepcopy(hadTop_parton['q1_p4'])
+        q2_p4 = copy.deepcopy(hadTop_parton['q2_p4'])
+        W_p4  .Boost(-boost_t)
+        q1_p4 .Boost(-boost_t)
+        q2_p4 .Boost(-boost_t)
 
-
-        n_scatter = ((beam.Vect().Unit()).Cross(hadTop_parton['W_p4'].Vect())).Unit()
-        n_decay   = (hadTop_parton['q1_p4'].Vect().Cross(hadTop_parton['q2_p4'].Vect())).Unit()
-        sign_flip =  1 if ( ((n_scatter.Cross(n_decay))*(hadTop_parton['W_p4'].Vect())) > 0 ) else -1
+        n_scatter = ((beam.Vect().Unit()).Cross(W_p4.Vect())).Unit()
+        n_decay   = (q1_p4.Vect().Cross(q2_p4.Vect())).Unit()
+        sign_flip =  1 if ( ((n_scatter.Cross(n_decay))*(W_p4.Vect())) > 0 ) else -1
 
         try:
             event.parton_hadTop_decayAngle_phi = sign_flip*acos(n_scatter.Dot(n_decay))
         except ValueError:
             event.parton_hadTop_decayAngle_phi = -100
 
-        boost_W = hadTop_parton['W_p4'].BoostVector()
-        hadTop_parton['q1_p4'].Boost(-boost_W)
+        boost_W = W_p4.BoostVector()
+        q1_p4.Boost(-boost_W)
 
         try:
-            event.parton_hadTop_decayAngle_theta = (hadTop_parton['W_p4']).Angle(hadTop_parton['q1_p4'].Vect())
+            event.parton_hadTop_decayAngle_theta = (W_p4).Angle(q1_p4.Vect())
         except ValueError:
             event.parton_hadTop_decayAngle_theta = -100
+
+        # let's not confuse ourselves later on
+        del W_p4, q1_p4, q2_p4
 
     # Leptonic top quark parton, for basic ttbar parton-level kinematics 
     if lepTop_parton is not None:        
@@ -723,44 +733,69 @@ def filler( event ):
         assert hadTop_parton['pdgId']+lepTop_parton['pdgId']==0, "Tops not OS!"
         top, antitop = (hadTop_parton, lepTop_parton) if hadTop_parton['pdgId']==6 else (lepTop_parton, hadTop_parton)
 
-        p4_q_down = makeP4(hadTop_parton['q1'].p4())
+        #print top['pdgId'], top['mass']
+        #top['p4'].Print()
+        #print antitop['pdgId'], antitop['mass']
+        #antitop['p4'].Print()
+        #print 
+
+
+        p4_q_down = makeP4(hadTop_parton['q1'].p4()) #down-type quark is q1, defined above
         p4_lep    = makeP4(lepTop_parton['lep'].p4()) 
-        # bernreuther 2l equivalence
+
+        # define momenta equivalent to 2l bernreuther 2l definition
         p4_l_plus, p4_l_minus = (p4_lep, p4_q_down) if lepTop_parton['lep'].pdgId()<0 else (p4_q_down, p4_lep)
-        #p4_beam = ROOT.TLorentzVector()
-        #p4_beam.SetPxPyPzE( 0, 0, 6500, 6500 )
+
+        # lab frame cosine of lepton unit vectors (TOP-18-006 Table 1 http://cds.cern.ch/record/2649926/files/TOP-18-006-pas.pdf)
+        cos_phi_lab      = p4_l_minus.Vect().Unit().Dot(p4_l_plus.Vect().Unit())
+        abs_delta_phi_ll_lab = abs( deltaPhi( p4_l_minus.Phi(), p4_l_plus.Phi() ) )
 
         p4_q_down.Boost(-boost_tt)
         p4_lep.Boost   (-boost_tt)
-        #p4_beam.Boost  (-boost_tt)
         p4_l_plus.Boost(-boost_tt)
         p4_l_minus.Boost(-boost_tt)
 
+        #p4_q_down.Print()
+        #p4_lep.Print()
+        #p4_l_plus.Print()
+        #p4_l_minus.Print()
+        #print 
+
+        # lepton momenta definitions below Eq. 4.6 in Bernreuther -> from the ZMF boost into t (or tbar) system and take unit vectors 
         p4_l_plus.Boost(-top['p4'].BoostVector())
         p4_l_minus.Boost(-antitop['p4'].BoostVector())
-       
         l_plus = p4_l_plus.Vect().Unit() 
         l_minus = p4_l_minus.Vect().Unit()
         
-        # basis in the ttbar system
+        # Eq. 4.13 basis of the ttbar system
         k_hat = top['p4'].Vect().Unit()
         p_hat = ROOT.TVector3(0,0,1) # Eq. 4.13 Bernreuther! 
         y = k_hat.Dot(p_hat)
         r = sqrt( 1-y**2 )  
-        r_hat = 1./r*(p_hat - (k_hat*y) )
+        r_hat = 1./r*(p_hat - (k_hat*y) ) #This needs the import of fixTVecMul. 
         n_hat = 1./r*(p_hat.Cross(k_hat))
 
         #for i, v1 in enumerate([r_hat, k_hat, n_hat]):
         #    for j, v2 in enumerate([r_hat, k_hat, n_hat]):
         #        print i, j, round(v1.Dot(v2),3)
-        s   =  float(sign(y)) # Bernreuther Table 5
-        n_a =  s*n_hat
-        n_b = -s*n_hat
-        r_a =  s*r_hat
-        r_b = -s*r_hat
+
+        sign_ =  float(sign(y)) # Bernreuther Table 5
+        n_a =  sign_*n_hat
+        n_b = -sign_*n_hat
+        r_a =  sign_*r_hat
+        r_b = -sign_*r_hat
         k_a =  k_hat
         k_b = -k_hat
 
+        # Eq 4.21 Bernreuther (k* and r*)
+        sign_star = float(sign(abs(top['p4'].Rapidity()) - abs(antitop['p4'].Rapidity())))
+        k_a_star  = sign_star*k_hat
+        k_b_star  = -sign_star*k_hat
+        r_a_star  = sign_star*float(sign(y))*r_hat
+        r_b_star  = -sign_star*float(sign(y))*r_hat
+
+    
+        # Bernreuther Eq. 4.7
         event.parton_cosThetaPlus_n  = n_a.Dot(l_plus)
         event.parton_cosThetaMinus_n = n_b.Dot(l_minus)
         event.parton_cosThetaPlus_r  = r_a.Dot(l_plus)
@@ -768,17 +803,26 @@ def filler( event ):
         event.parton_cosThetaPlus_k  = k_a.Dot(l_plus)
         event.parton_cosThetaMinus_k = k_b.Dot(l_minus)
 
+        event.parton_cosThetaPlus_r_star  = r_a_star.Dot(l_plus)
+        event.parton_cosThetaMinus_r_star = r_b_star.Dot(l_minus)
+        event.parton_cosThetaPlus_k_star  = k_a_star.Dot(l_plus)
+        event.parton_cosThetaMinus_k_star = k_b_star.Dot(l_minus)
+
+        # TOP-18-006 table 1 http://cds.cern.ch/record/2649926/files/TOP-18-006-pas.pdf
         event.parton_xi_nn = event.parton_cosThetaPlus_n*event.parton_cosThetaMinus_n 
         event.parton_xi_rr = event.parton_cosThetaPlus_r*event.parton_cosThetaMinus_r 
         event.parton_xi_kk = event.parton_cosThetaPlus_k*event.parton_cosThetaMinus_k
 
-        event.parton_xi_nk = event.parton_cosThetaPlus_n*event.parton_cosThetaMinus_k 
-        event.parton_xi_rn = event.parton_cosThetaPlus_r*event.parton_cosThetaMinus_n 
-        event.parton_xi_kr = event.parton_cosThetaPlus_k*event.parton_cosThetaMinus_r
+        event.parton_xi_nr_plus = event.parton_cosThetaPlus_n*event.parton_cosThetaMinus_r + event.parton_cosThetaPlus_r*event.parton_cosThetaMinus_n
+        event.parton_xi_nr_minus= event.parton_cosThetaPlus_n*event.parton_cosThetaMinus_r - event.parton_cosThetaPlus_r*event.parton_cosThetaMinus_n
+        event.parton_xi_rk_plus = event.parton_cosThetaPlus_r*event.parton_cosThetaMinus_k + event.parton_cosThetaPlus_k*event.parton_cosThetaMinus_r
+        event.parton_xi_rk_minus= event.parton_cosThetaPlus_r*event.parton_cosThetaMinus_k - event.parton_cosThetaPlus_k*event.parton_cosThetaMinus_r
+        event.parton_xi_nk_plus = event.parton_cosThetaPlus_n*event.parton_cosThetaMinus_k + event.parton_cosThetaPlus_k*event.parton_cosThetaMinus_n
+        event.parton_xi_nk_minus= event.parton_cosThetaPlus_n*event.parton_cosThetaMinus_k - event.parton_cosThetaPlus_k*event.parton_cosThetaMinus_n
 
-        event.parton_xi_nr = event.parton_cosThetaPlus_n*event.parton_cosThetaMinus_r 
-        event.parton_xi_rk = event.parton_cosThetaPlus_r*event.parton_cosThetaMinus_k 
-        event.parton_xi_kn = event.parton_cosThetaPlus_k*event.parton_cosThetaMinus_n
+        event.parton_cos_phi     = l_plus.Dot(l_minus)
+        event.parton_cos_phi_lab = cos_phi_lab 
+        event.parton_abs_delta_phi_ll_lab   = abs_delta_phi_ll_lab
 
     # Delphes AK4 jets 
     allRecoJets = delphesReader.jets()
