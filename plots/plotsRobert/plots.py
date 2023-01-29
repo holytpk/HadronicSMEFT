@@ -158,9 +158,6 @@ preselection = [
 ]
 
 selectionString  = "&&".join( [ c[1] for c in preselection] + ([cutInterpreter.cutString(args.selection)] if args.selection is not None else []))
-subDirectory     =  '-'.join( [ c[0] for c in preselection] + ([args.selection] if args.selection is not None else []))
-if subDirectory  == '': 
-    subDirectory = 'inc'
 
 for sample in stack.samples:
     if selectionString != "":
@@ -946,9 +943,9 @@ def drawObjects( hasData = False ):
     return [tex.DrawLatex(*l) for l in lines] 
 
 # draw function for plots
-def drawPlots(plots, subDirectory='', ratio=True, legend_columns=2):
+def drawPlots(plots, ratio=True, legend_columns=2):
   for log in [False, True]:
-    plot_directory_ = os.path.join(plot_directory, subDirectory)
+    plot_directory_ = os.path.join(plot_directory)
     plot_directory_ = os.path.join(plot_directory_, "log") if log else os.path.join(plot_directory_, "lin")
     for plot in plots:
         if  type(plot)==Plot2D:
@@ -987,7 +984,7 @@ for plot in plots:
         except IndexError:
             pass
 
-drawPlots(plots, subDirectory = subDirectory)
+drawPlots(plots)
 
 rw_plots = []
 for i in range(len(plots_reweight)/2):
@@ -1002,7 +999,7 @@ for i in range(len(plots_reweight)/2):
         )
     rw_plots[-1].stack=None
 
-drawPlots(rw_plots, subDirectory = subDirectory, ratio=None, legend_columns=1)
+drawPlots(rw_plots, ratio=None, legend_columns=1)
 
 logger.info( "Done with prefix %s and selectionString %s", args.selection, cutInterpreter.cutString(args.selection) )
 
