@@ -25,3 +25,12 @@ elif os.environ['USER'] in ['dietrich.liko']:
 
     gridpack_directory                  = "/eos/vbc/user/robert.schoefbeck/gridpacks/"
     cache_directory                     = "/users/robert.schoefbeck/public/cache/HadronicSMEFT/"
+
+elif os.environ['USER'] in ['suman.chatterjee']:
+
+    skim_output_directory               = "/scratch-cbe/users/suman.chatterjee/HadronicSMEFT/postprocessed/"
+    tmp_output_directory                = "/scratch/users/suman.chatterjee/tmp_pp_dir/HadronicSMEFT/"
+    plot_directory                      = "/groups/hephy/cms/suman.chatterjee/www/HadronicSMEFT/"
+
+    gridpack_directory                  = "/eos/vbc/user/robert.schoefbeck/gridpacks/"
+    cache_directory                     = "/users/robert.schoefbeck/public/cache/HadronicSMEFT/"
