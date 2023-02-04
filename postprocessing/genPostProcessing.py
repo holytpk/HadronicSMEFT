@@ -743,6 +743,7 @@ def filler( event ):
         #antitop['p4'].Print()
         #print 
 
+        p4_top    = makeP4(top['p4'])
 
         p4_q_down = makeP4(hadTop_parton['q1'].p4()) #down-type quark is q1, defined above
         p4_lep    = makeP4(lepTop_parton['lep'].p4()) 
@@ -754,6 +755,7 @@ def filler( event ):
         cos_phi_lab      = p4_l_minus.Vect().Unit().Dot(p4_l_plus.Vect().Unit())
         abs_delta_phi_ll_lab = abs( deltaPhi( p4_l_minus.Phi(), p4_l_plus.Phi() ) )
 
+        p4_top.Boost(-boost_tt)
         p4_q_down.Boost(-boost_tt)
         p4_lep.Boost   (-boost_tt)
         p4_l_plus.Boost(-boost_tt)
@@ -772,7 +774,7 @@ def filler( event ):
         l_minus = p4_l_minus.Vect().Unit()
         
         # Eq. 4.13 basis of the ttbar system
-        k_hat = top['p4'].Vect().Unit()
+        k_hat = p4_top.Vect().Unit()
         p_hat = ROOT.TVector3(0,0,1) # Eq. 4.13 Bernreuther! 
         y = k_hat.Dot(p_hat)
         r = sqrt( 1-y**2 )  
