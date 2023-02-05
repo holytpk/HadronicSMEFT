@@ -30,8 +30,8 @@ TT01j1l_HT800.reweight_pkl = os.path.join(gridpack_directory, "TT01jDebug_reweig
 TT01j1l = Sample.fromDirectory("TT01j1l", texName = "t#bar{t} 1l", directory = [os.path.join( pp_dir, "TT01j1l" )]) 
 TT01j1l.reweight_pkl = os.path.join(gridpack_directory, "TT01jDebug_reweight_card.pkl")
 
-TT01j2l_HT800 = Sample.fromDirectory("TT01j2l_HT800", texName = "t#bar{t} 2l H_{T}>800", directory = [os.path.join( pp_dir, "TT01j2l_HT800" )]) 
-TT01j2l_HT800.reweight_pkl = os.path.join(gridpack_directory, "TT01jDebug_reweight_card.pkl")
-
-TT01j2l = Sample.fromDirectory("TT01j2l", texName = "t#bar{t} 2l", directory = [os.path.join( pp_dir, "TT01j2l" )]) 
-TT01j2l.reweight_pkl = os.path.join(gridpack_directory, "TT01jDebug_reweight_card.pkl")
+#TT01j2l_HT800 = Sample.fromDirectory("TT01j2l_HT800", texName = "t#bar{t} 2l H_{T}>800", directory = [os.path.join( pp_dir, "TT01j2l_HT800" )]) 
+#TT01j2l_HT800.reweight_pkl = os.path.join(gridpack_directory, "TT01jDebug_reweight_card.pkl")
+#
+#TT01j2l = Sample.fromDirectory("TT01j2l", texName = "t#bar{t} 2l", directory = [os.path.join( pp_dir, "TT01j2l" )]) 
+#TT01j2l.reweight_pkl = os.path.join(gridpack_directory, "TT01jDebug_reweight_card.pkl")

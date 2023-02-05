@@ -743,7 +743,8 @@ def filler( event ):
         #antitop['p4'].Print()
         #print 
 
-        p4_top    = makeP4(top['p4'])
+        p4_top      = copy.deepcopy(top['p4'])
+        p4_antitop  = copy.deepcopy(antitop['p4'])
 
         p4_q_down = makeP4(hadTop_parton['q1'].p4()) #down-type quark is q1, defined above
         p4_lep    = makeP4(lepTop_parton['lep'].p4()) 
@@ -756,6 +757,7 @@ def filler( event ):
         abs_delta_phi_ll_lab = abs( deltaPhi( p4_l_minus.Phi(), p4_l_plus.Phi() ) )
 
         p4_top.Boost(-boost_tt)
+        p4_antitop.Boost(-boost_tt)
         p4_q_down.Boost(-boost_tt)
         p4_lep.Boost   (-boost_tt)
         p4_l_plus.Boost(-boost_tt)
@@ -768,8 +770,8 @@ def filler( event ):
         #print 
 
         # lepton momenta definitions below Eq. 4.6 in Bernreuther -> from the ZMF boost into t (or tbar) system and take unit vectors 
-        p4_l_plus.Boost(-top['p4'].BoostVector())
-        p4_l_minus.Boost(-antitop['p4'].BoostVector())
+        p4_l_plus.Boost(-p4_top.BoostVector())
+        p4_l_minus.Boost(-p4_antitop.BoostVector())
         l_plus = p4_l_plus.Vect().Unit() 
         l_minus = p4_l_minus.Vect().Unit()
         
@@ -794,7 +796,7 @@ def filler( event ):
         k_b = -k_hat
 
         # Eq 4.21 Bernreuther (k* and r*)
-        sign_star = float(sign(abs(top['p4'].Rapidity()) - abs(antitop['p4'].Rapidity())))
+        sign_star = float(sign(abs(p4_top.Rapidity()) - abs(p4_antitop.Rapidity())))
         k_a_star  = sign_star*k_hat
         k_b_star  = -sign_star*k_hat
         r_a_star  = sign_star*float(sign(y))*r_hat

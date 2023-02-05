@@ -508,6 +508,12 @@ plots.append(Plot( name = "parton_xi_nn",
   binning   =  [50,-1,1],
 ))
 
+plots.append(Plot( name = "parton_xi_D",
+  texX = "D=#sum_{i=r,n,k}#xi_{ii}", texY = 'Number of Events',
+  attribute = lambda event, sample: event.parton_xi_nn+event.parton_xi_rr+event.parton_xi_kk,
+  binning   =  [50,-1,1],
+))
+
 plots.append(Plot( name = "parton_xi_rr",
   texX = "#xi_{rr}", texY = 'Number of Events',
   attribute = lambda event, sample: event.parton_xi_rr,
@@ -961,7 +967,7 @@ def drawPlots(plots, ratio=True, legend_columns=2):
             subtr = 0 #if args.show_derivatives else len(eft_configs)
             plotting.draw(plot,
               plot_directory = plot_directory_,
-              ratio =  {'yRange':(0.4,1.6), 'histos':[(i,0) for i in range(1,len(plot.histos))]} if ratio else None,
+              ratio =  {'yRange':(0.8,1.2), 'histos':[(i,0) for i in range(1,len(plot.histos))]} if ratio else None,
               logX = False, logY = log, sorting = False,
               yRange = (.5, "auto") if log else (0, "auto"),
               scaling = {},
