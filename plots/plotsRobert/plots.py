@@ -285,7 +285,7 @@ plots        = []
 #    ))
 
 # Use some defaults
-Plot.setDefaults(stack = stack, weight = eft_weights, addOverFlowBin="upper")
+Plot.setDefaults(stack = stack, weight = eft_weights)#, addOverFlowBin="upper")
 
 if args.reweight:
  
@@ -294,7 +294,7 @@ if args.reweight:
       attribute      = lambda event, sample: event.delphesJet_pt,
       texX           = "AK8 jet p_{T}", texY = 'Number of Events',
       binning        =  [30, 500, 2000],
-      addOverFlowBin = "upper",
+      #addOverFlowBin = "upper",
     )
 
     plotting.fill([ reweight_pt ], read_variables = read_variables, sequence = sequence, max_events = -1 if args.small else -1)
@@ -320,7 +320,7 @@ if args.reweight:
         eft_weights.append( [lambda event, sample, i_eft=i_eft: event.eft_weights[i_eft]*reweight[i_eft](event, sample)] )
 
     # Reset some defaults
-    Plot.setDefaults(stack = stack, weight = eft_weights, addOverFlowBin="upper")
+    Plot.setDefaults(stack = stack, weight = eft_weights)#, addOverFlowBin="upper")
 
 plots.append(Plot( name = "parton_hadTop_pt",
   texX = "parton p_{T}(t)", texY = 'Number of Events',
@@ -439,145 +439,145 @@ plots.append(Plot( name = "parton_hadTop_b_phi",
 plots.append(Plot( name = "parton_hadTop_b_mass",
   texX = "M(b)", texY = 'Number of Events',
   attribute = lambda event, sample: event.parton_hadTop_b_mass,
-  binning   =  [50,0,10],
+  binning   =  [20,0,10],
 ))
 
 plots.append(Plot( name = "parton_cosThetaPlus_n",
   texX = "cos(#theta^{+}_{n})", texY = 'Number of Events',
   attribute = lambda event, sample: event.parton_cosThetaPlus_n,
-  binning   =  [50,-1,1],
+  binning   =  [20,-1,1],
 ))
 
 plots.append(Plot( name = "parton_cosThetaPlus_r",
   texX = "cos(#theta^{+}_{r})", texY = 'Number of Events',
   attribute = lambda event, sample: event.parton_cosThetaPlus_r,
-  binning   =  [50,-1,1],
+  binning   =  [20,-1,1],
 ))
 
 plots.append(Plot( name = "parton_cosThetaPlus_k",
   texX = "cos(#theta^{+}_{k})", texY = 'Number of Events',
   attribute = lambda event, sample: event.parton_cosThetaPlus_k,
-  binning   =  [50,-1,1],
+  binning   =  [20,-1,1],
 ))
 
 plots.append(Plot( name = "parton_cosThetaMinus_n",
   texX = "cos(#theta^{-}_{n})", texY = 'Number of Events',
   attribute = lambda event, sample: event.parton_cosThetaMinus_n,
-  binning   =  [50,-1,1],
+  binning   =  [20,-1,1],
 ))
 
 plots.append(Plot( name = "parton_cosThetaMinus_r",
   texX = "cos(#theta^{-}_{r})", texY = 'Number of Events',
   attribute = lambda event, sample: event.parton_cosThetaMinus_r,
-  binning   =  [50,-1,1],
+  binning   =  [20,-1,1],
 ))
 
 plots.append(Plot( name = "parton_cosThetaMinus_k",
   texX = "cos(#theta^{-}_{k})", texY = 'Number of Events',
   attribute = lambda event, sample: event.parton_cosThetaMinus_k,
-  binning   =  [50,-1,1],
+  binning   =  [20,-1,1],
 ))
 
 plots.append(Plot( name = "parton_cosThetaMinus_r_star",
   texX = "cos(#theta^{-*}_{r})", texY = 'Number of Events',
   attribute = lambda event, sample: event.parton_cosThetaMinus_r_star,
-  binning   =  [50,-1,1],
-))
-
-plots.append(Plot( name = "parton_cosThetaMinus_k",
-  texX = "cos(#theta^{-*}_{k})", texY = 'Number of Events',
-  attribute = lambda event, sample: event.parton_cosThetaMinus_k,
-  binning   =  [50,-1,1],
+  binning   =  [20,-1,1],
 ))
 
 plots.append(Plot( name = "parton_cosThetaPlus_r_star",
   texX = "cos(#theta^{+*}_{r})", texY = 'Number of Events',
   attribute = lambda event, sample: event.parton_cosThetaPlus_r_star,
-  binning   =  [50,-1,1],
+  binning   =  [20,-1,1],
 ))
 
-plots.append(Plot( name = "parton_cosThetaPlus_k",
+plots.append(Plot( name = "parton_cosThetaMinus_k_star",
+  texX = "cos(#theta^{-*}_{k})", texY = 'Number of Events',
+  attribute = lambda event, sample: event.parton_cosThetaMinus_k_star,
+  binning   =  [20,-1,1],
+))
+
+plots.append(Plot( name = "parton_cosThetaPlus_k_star",
   texX = "cos(#theta^{+*}_{k})", texY = 'Number of Events',
-  attribute = lambda event, sample: event.parton_cosThetaPlus_k,
-  binning   =  [50,-1,1],
+  attribute = lambda event, sample: event.parton_cosThetaPlus_k_star,
+  binning   =  [20,-1,1],
 ))
 
 plots.append(Plot( name = "parton_xi_nn",
   texX = "#xi_{nn}", texY = 'Number of Events',
   attribute = lambda event, sample: event.parton_xi_nn,
-  binning   =  [50,-1,1],
-))
-
-plots.append(Plot( name = "parton_xi_D",
-  texX = "D=#sum_{i=r,n,k}#xi_{ii}", texY = 'Number of Events',
-  attribute = lambda event, sample: event.parton_xi_nn+event.parton_xi_rr+event.parton_xi_kk,
-  binning   =  [50,-1,1],
+  binning   =  [20,-1,1],
 ))
 
 plots.append(Plot( name = "parton_xi_rr",
   texX = "#xi_{rr}", texY = 'Number of Events',
   attribute = lambda event, sample: event.parton_xi_rr,
-  binning   =  [50,-1,1],
+  binning   =  [20,-1,1],
 ))
 
 plots.append(Plot( name = "parton_xi_kk",
   texX = "#xi_{kk}", texY = 'Number of Events',
   attribute = lambda event, sample: event.parton_xi_kk,
-  binning   =  [50,-1,1],
+  binning   =  [20,-1,1],
+))
+
+plots.append(Plot( name = "parton_xi_D",
+  texX = "D=#sum#xi_{ii}", texY = 'Number of Events',
+  attribute = lambda event, sample: (event.parton_xi_nn+event.parton_xi_rr+event.parton_xi_kk),
+  binning   =  [24,-1.2,1.2],
 ))
 
 plots.append(Plot( name = "parton_xi_nr_plus",
   texX = "#xi_{nr}^{+}", texY = 'Number of Events',
   attribute = lambda event, sample: event.parton_xi_nr_plus,
-  binning   =  [50,-1,1],
+  binning   =  [20,-1,1],
 ))
 
 plots.append(Plot( name = "parton_xi_nr_minus",
   texX = "#xi_{nr}^{-}", texY = 'Number of Events',
   attribute = lambda event, sample: event.parton_xi_nr_minus,
-  binning   =  [50,-1,1],
+  binning   =  [20,-1,1],
 ))
 
 plots.append(Plot( name = "parton_xi_rk_plus",
   texX = "#xi_{nr}^{+}", texY = 'Number of Events',
   attribute = lambda event, sample: event.parton_xi_rk_plus,
-  binning   =  [50,-1,1],
+  binning   =  [20,-1,1],
 ))
 
 plots.append(Plot( name = "parton_xi_rk_minus",
   texX = "#xi_{nr}^{-}", texY = 'Number of Events',
   attribute = lambda event, sample: event.parton_xi_rk_minus,
-  binning   =  [50,-1,1],
+  binning   =  [20,-1,1],
 ))
 
 plots.append(Plot( name = "parton_xi_nk_plus",
   texX = "#xi_{nr}^{+}", texY = 'Number of Events',
   attribute = lambda event, sample: event.parton_xi_nk_plus,
-  binning   =  [50,-1,1],
+  binning   =  [20,-1,1],
 ))
 
 plots.append(Plot( name = "parton_xi_nk_minus",
   texX = "#xi_{nr}^{-}", texY = 'Number of Events',
   attribute = lambda event, sample: event.parton_xi_nk_minus,
-  binning   =  [50,-1,1],
+  binning   =  [20,-1,1],
 ))
 
 plots.append(Plot( name = "parton_cos_phi",
   texX = "parton cos(#phi(l,l))", texY = 'Number of Events',
   attribute = lambda event, sample: event.parton_cos_phi,
-  binning   =  [50,-1,1],
+  binning   =  [20,-1,1],
 ))
 
 plots.append(Plot( name = "parton_cos_phi_lab",
   texX = "parton cos(#phi(l,l)) lab", texY = 'Number of Events',
   attribute = lambda event, sample: event.parton_cos_phi_lab,
-  binning   =  [50,-1,1],
+  binning   =  [20,-1,1],
 ))
 
 plots.append(Plot( name = "parton_abs_delta_phi_ll_lab",
   texX = "parton |#Delta#phi(l,l)| lab", texY = 'Number of Events',
   attribute = lambda event, sample: event.parton_abs_delta_phi_ll_lab,
-  binning   =  [50,0,pi],
+  binning   =  [20,0,pi],
 ))
 
 plots.append(Plot( name = "deltaR_jet_q1_wide",
@@ -920,7 +920,7 @@ plots.append(Plot( name = "delphesJet_ecfU3beta2",
 
 plots_reweight = []
 if args.reweight:
-    Plot.setDefaults(stack = Stack(*(stack[:1])), weight = None, addOverFlowBin="upper")
+    Plot.setDefaults(stack = Stack(*(stack[:1])), weight = None)#, addOverFlowBin="upper")
     for i_eft_config, eft_config in enumerate(eft_configs):
         if i_eft_config==0: continue
 

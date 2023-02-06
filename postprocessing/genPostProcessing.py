@@ -592,7 +592,7 @@ def filler( event ):
         for i_ecf, (name, _) in enumerate( ecfs ):
              setattr(event, "delphesJet_"+name, result[i_ecf] )
 
-        delphesJet_dict       = {'eta':event.delphesJet_eta, 'phi':event.delphesJet_phi}
+        delphesJet_dict       = {'eta':event.delphesJet_eta, 'phi':event.delphesJet_phi, 'eflowCandsVec':eflowCandsVec}
         try:
             closest_hadTop_parton = min( hadTop_partons, key=lambda p: deltaR( delphesJet_dict, p) )
             matched_hadTop_parton = closest_hadTop_parton if deltaR( closest_hadTop_parton, delphesJet_dict )<0.6 else None
@@ -737,11 +737,11 @@ def filler( event ):
         assert hadTop_parton['pdgId']+lepTop_parton['pdgId']==0, "Tops not OS!"
         top, antitop = (hadTop_parton, lepTop_parton) if hadTop_parton['pdgId']==6 else (lepTop_parton, hadTop_parton)
 
-        #print top['pdgId'], top['mass']
-        #top['p4'].Print()
-        #print antitop['pdgId'], antitop['mass']
-        #antitop['p4'].Print()
-        #print 
+#        print top['pdgId'], top['mass']
+#        top['p4'].Print()
+#        print antitop['pdgId'], antitop['mass']
+#        antitop['p4'].Print()
+#        print 
 
         p4_top      = copy.deepcopy(top['p4'])
         p4_antitop  = copy.deepcopy(antitop['p4'])
@@ -758,22 +758,39 @@ def filler( event ):
 
         p4_top.Boost(-boost_tt)
         p4_antitop.Boost(-boost_tt)
-        p4_q_down.Boost(-boost_tt)
-        p4_lep.Boost   (-boost_tt)
         p4_l_plus.Boost(-boost_tt)
         p4_l_minus.Boost(-boost_tt)
 
-        #p4_q_down.Print()
-        #p4_lep.Print()
-        #p4_l_plus.Print()
-        #p4_l_minus.Print()
-        #print 
+#        print "tt rest system"
+#        print "top",
+#        p4_top.Print()
+#        print "antitop",
+#        p4_antitop.Print()
+#        print "q down:", hadTop_parton['q1'].pdgId() 
+#        p4_q_down.Print()
+#        print "lep: ",lepTop_parton['lep'].pdgId()
+#        p4_lep.Print()
+#        print "l+ (equivalent)"
+#        p4_l_plus.Print()
+#        print "l- (equivalent)"
+#        p4_l_minus.Print()
+#        print 
+        
 
         # lepton momenta definitions below Eq. 4.6 in Bernreuther -> from the ZMF boost into t (or tbar) system and take unit vectors 
         p4_l_plus.Boost(-p4_top.BoostVector())
         p4_l_minus.Boost(-p4_antitop.BoostVector())
         l_plus = p4_l_plus.Vect().Unit() 
         l_minus = p4_l_minus.Vect().Unit()
+
+#        print "top/antitop rest system"
+#        print "l+ (equivalent)"
+#        p4_l_plus.Print()
+#        print "l- (equivalent)"
+#        p4_l_minus.Print()
+#        print 
+#
+#        assert False, ""
         
         # Eq. 4.13 basis of the ttbar system
         k_hat = p4_top.Vect().Unit()
@@ -832,6 +849,34 @@ def filler( event ):
         event.parton_cos_phi_lab = cos_phi_lab 
         event.parton_abs_delta_phi_ll_lab   = abs_delta_phi_ll_lab
 
+        #print event.parton_cosThetaPlus_n  
+        #print event.parton_cosThetaMinus_n 
+        #print event.parton_cosThetaPlus_r  
+        #print event.parton_cosThetaMinus_r 
+        #print event.parton_cosThetaPlus_k  
+        #print event.parton_cosThetaMinus_k 
+
+        #print event.parton_cosThetaPlus_r_star  
+        #print event.parton_cosThetaMinus_r_star 
+        #print event.parton_cosThetaPlus_k_star  
+        #print event.parton_cosThetaMinus_k_star 
+
+        #print event.parton_xi_nn 
+        #print event.parton_xi_rr 
+        #print event.parton_xi_kk 
+
+        #print event.parton_xi_nr_plus 
+        #print event.parton_xi_nr_minus
+        #print event.parton_xi_rk_plus 
+        #print event.parton_xi_rk_minus
+        #print event.parton_xi_nk_plus 
+        #print event.parton_xi_nk_minus
+
+        #print event.parton_cos_phi     
+        #print event.parton_cos_phi_lab 
+        #print event.parton_abs_delta_phi_ll_lab   
+
+        #assert False, ""
     # Delphes AK4 jets 
     allRecoJets = delphesReader.jets()
 
