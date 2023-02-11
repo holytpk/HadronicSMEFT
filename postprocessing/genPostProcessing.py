@@ -9,7 +9,7 @@ import copy, shutil
 import ROOT
 ROOT.gROOT.SetBatch(True)
 from math                             import sqrt, cos, sin, pi, acos, cosh, sinh
-from numpy import sign
+import numpy as np
 #RootTools
 from RootTools.core.standard          import *
 
@@ -41,7 +41,7 @@ argParser.add_argument('--nJobs',              action='store',      nargs='?', t
 argParser.add_argument('--job',                action='store',      nargs='?', type=int, default=0,  help="Run only job i")
 argParser.add_argument('--removeDelphesFiles', action='store_true',   help="remove Delphes file after postprocessing?")
 argParser.add_argument('--interpolationOrder', action='store',      nargs='?', type=int, default=2,  help="Interpolation order for EFT weights.")
-argParser.add_argument('--trainingCoefficients', action='store',    nargs='?', default=['ctWRe', 'ctWIm'],  help="Training vectors for particle net")
+argParser.add_argument('--trainingCoefficients', action='store',    nargs='*', default=['ctWRe', 'ctWIm'],  help="Training vectors for particle net")
 args = argParser.parse_args()
 
 #
@@ -268,9 +268,8 @@ categories = [
 
 #cand_vars           =  "pt/F,etarel/F,phirel/F,eta/F,phi/F,pdgId/I"
 #cand_varnames       =  varnames( cand_vars )
-cand_vars        =  "pt/F,etarel/F,phirel/F,eta/F,phi/F,pdgId/I,charge/I,type/I"
+cand_vars        =  "pt/F,etarel/F,phirel/F,eta/F,phi/F,pdgId/I,charge/I,type/I,cos_phi_lab/F,abs_delta_phi_ll_lab/F,cosTheta_n/F,cosTheta_r/F,cosTheta_k/F,cosTheta_r_star/F,cosTheta_k_star/F,xi_nn/F,xi_rr/F,xi_kk/F,xi_nr_plus/F,xi_nr_minus/F,xi_rk_plus/F,xi_rk_minus/F,xi_nk_plus/F,xi_nk_minus/F,cos_phi/F"
 cand_varnames    =  varnames( cand_vars )
-
 nCandMax = 200
 variables.append(VectorTreeVariable.fromString("eflow[%s]"%(cand_vars), nMax=nCandMax ))
 
@@ -426,7 +425,6 @@ def filler( event ):
 
     # All gen particles
     gp        = fwliteReader.products['gp']
-    #gpPacked  = fwliteReader.products['gpPacked']
 
     # for searching
     search  = GenSearch( gp )
@@ -536,10 +534,6 @@ def filler( event ):
     except ValueError:
         delphesJet = None
 
-    #for i_delphesJet, delphesJet in enumerate(delphesJets):
-    #    if delphesJet.pt()>400:
-    #        print "AK8", len(delphesJet.constituents()), "mass", delphesJet.m(), delphesJet.pt(), delphesJet.eta(), delphesJet.phi()
-
     # AK8 Delphes RECO jet candidate
     matched_hadTop_parton = None
     if delphesJet is not None:
@@ -548,6 +542,7 @@ def filler( event ):
         event.delphesJet_pt   = delphesJet.pt()
         event.delphesJet_eta  = delphesJet.eta()
         event.delphesJet_phi  = delphesJet.phi()
+
         event.delphesJet_nConstituents  = len(delphesJet.constituents())
 
         delphesJet_constituents = [ eflow_event[p.user_index()] for p in delphesJet.constituents() ]
@@ -592,7 +587,10 @@ def filler( event ):
         for i_ecf, (name, _) in enumerate( ecfs ):
              setattr(event, "delphesJet_"+name, result[i_ecf] )
 
-        delphesJet_dict       = {'eta':event.delphesJet_eta, 'phi':event.delphesJet_phi, 'eflowCandsVec':eflowCandsVec}
+        delphesJet_dict       = {'pt':event.delphesJet_pt, 'eta':event.delphesJet_eta, 'phi':event.delphesJet_phi, 'mass':event.delphesJet_mass, 'eflowCandsVec':eflowCandsVec}
+        delphesJet_dict['p4'] = ROOT.TLorentzVector()
+        delphesJet_dict['p4'].SetPtEtaPhiM(event.delphesJet_pt, event.delphesJet_eta, event.delphesJet_phi, event.delphesJet_mass)
+
         try:
             closest_hadTop_parton = min( hadTop_partons, key=lambda p: deltaR( delphesJet_dict, p) )
             matched_hadTop_parton = closest_hadTop_parton if deltaR( closest_hadTop_parton, delphesJet_dict )<0.6 else None
@@ -622,7 +620,6 @@ def filler( event ):
                 if cat['name'] in ['ph', 'neh']:
                     cand['charge'] = 0
 
-        fill_vector_collection( event, "eflow", cand_varnames, delphesJet_constituents)
 
     # Top quark parton: The delphesJet-matched hadronically decaying top quark parton and, if the delphesJet has no match, the leading hadronic top quark parton
     if matched_hadTop_parton is not None:
@@ -731,17 +728,11 @@ def filler( event ):
         event.parton_lepTop_W_pdgId = lepTop_parton['W'].pdgId()
 
     # full ttbar gen-information available
-    if hadTop_parton and lepTop_parton:
+    if lepTop_parton and hadTop_parton:
         boost_tt =  (lepTop_parton['p4'] + hadTop_parton['p4']).BoostVector()
 
         assert hadTop_parton['pdgId']+lepTop_parton['pdgId']==0, "Tops not OS!"
         top, antitop = (hadTop_parton, lepTop_parton) if hadTop_parton['pdgId']==6 else (lepTop_parton, hadTop_parton)
-
-#        print top['pdgId'], top['mass']
-#        top['p4'].Print()
-#        print antitop['pdgId'], antitop['mass']
-#        antitop['p4'].Print()
-#        print 
 
         p4_top      = copy.deepcopy(top['p4'])
         p4_antitop  = copy.deepcopy(antitop['p4'])
@@ -761,37 +752,12 @@ def filler( event ):
         p4_l_plus.Boost(-boost_tt)
         p4_l_minus.Boost(-boost_tt)
 
-#        print "tt rest system"
-#        print "top",
-#        p4_top.Print()
-#        print "antitop",
-#        p4_antitop.Print()
-#        print "q down:", hadTop_parton['q1'].pdgId() 
-#        p4_q_down.Print()
-#        print "lep: ",lepTop_parton['lep'].pdgId()
-#        p4_lep.Print()
-#        print "l+ (equivalent)"
-#        p4_l_plus.Print()
-#        print "l- (equivalent)"
-#        p4_l_minus.Print()
-#        print 
-        
-
         # lepton momenta definitions below Eq. 4.6 in Bernreuther -> from the ZMF boost into t (or tbar) system and take unit vectors 
         p4_l_plus.Boost(-p4_top.BoostVector())
         p4_l_minus.Boost(-p4_antitop.BoostVector())
         l_plus = p4_l_plus.Vect().Unit() 
         l_minus = p4_l_minus.Vect().Unit()
 
-#        print "top/antitop rest system"
-#        print "l+ (equivalent)"
-#        p4_l_plus.Print()
-#        print "l- (equivalent)"
-#        p4_l_minus.Print()
-#        print 
-#
-#        assert False, ""
-        
         # Eq. 4.13 basis of the ttbar system
         k_hat = p4_top.Vect().Unit()
         p_hat = ROOT.TVector3(0,0,1) # Eq. 4.13 Bernreuther! 
@@ -800,38 +766,28 @@ def filler( event ):
         r_hat = 1./r*(p_hat - (k_hat*y) ) #This needs the import of fixTVecMul. 
         n_hat = 1./r*(p_hat.Cross(k_hat))
 
-        #for i, v1 in enumerate([r_hat, k_hat, n_hat]):
-        #    for j, v2 in enumerate([r_hat, k_hat, n_hat]):
-        #        print i, j, round(v1.Dot(v2),3)
-
-        sign_ =  float(sign(y)) # Bernreuther Table 5
+        sign_ =  float(np.sign(y)) # Bernreuther Table 5
         n_a =  sign_*n_hat
-        n_b = -sign_*n_hat
         r_a =  sign_*r_hat
-        r_b = -sign_*r_hat
         k_a =  k_hat
-        k_b = -k_hat
 
         # Eq 4.21 Bernreuther (k* and r*)
-        sign_star = float(sign(abs(p4_top.Rapidity()) - abs(p4_antitop.Rapidity())))
+        sign_star = float(np.sign(abs(p4_top.Rapidity()) - abs(p4_antitop.Rapidity())))
         k_a_star  = sign_star*k_hat
-        k_b_star  = -sign_star*k_hat
-        r_a_star  = sign_star*float(sign(y))*r_hat
-        r_b_star  = -sign_star*float(sign(y))*r_hat
-
+        r_a_star  = sign_star*sign_*r_hat
     
         # Bernreuther Eq. 4.7
         event.parton_cosThetaPlus_n  = n_a.Dot(l_plus)
-        event.parton_cosThetaMinus_n = n_b.Dot(l_minus)
+        event.parton_cosThetaMinus_n =-n_a.Dot(l_minus)
         event.parton_cosThetaPlus_r  = r_a.Dot(l_plus)
-        event.parton_cosThetaMinus_r = r_b.Dot(l_minus)
+        event.parton_cosThetaMinus_r =-r_a.Dot(l_minus)
         event.parton_cosThetaPlus_k  = k_a.Dot(l_plus)
-        event.parton_cosThetaMinus_k = k_b.Dot(l_minus)
+        event.parton_cosThetaMinus_k =-k_a.Dot(l_minus)
 
         event.parton_cosThetaPlus_r_star  = r_a_star.Dot(l_plus)
-        event.parton_cosThetaMinus_r_star = r_b_star.Dot(l_minus)
+        event.parton_cosThetaMinus_r_star =-r_a_star.Dot(l_minus)
         event.parton_cosThetaPlus_k_star  = k_a_star.Dot(l_plus)
-        event.parton_cosThetaMinus_k_star = k_b_star.Dot(l_minus)
+        event.parton_cosThetaMinus_k_star =-k_a_star.Dot(l_minus)
 
         # TOP-18-006 table 1 http://cds.cern.ch/record/2649926/files/TOP-18-006-pas.pdf
         event.parton_xi_nn = event.parton_cosThetaPlus_n*event.parton_cosThetaMinus_n 
@@ -847,45 +803,98 @@ def filler( event ):
 
         event.parton_cos_phi     = l_plus.Dot(l_minus)
         event.parton_cos_phi_lab = cos_phi_lab 
-        event.parton_abs_delta_phi_ll_lab   = abs_delta_phi_ll_lab
+        event.parton_abs_delta_phi_ll_lab = abs_delta_phi_ll_lab
 
-        #print event.parton_cosThetaPlus_n  
-        #print event.parton_cosThetaMinus_n 
-        #print event.parton_cosThetaPlus_r  
-        #print event.parton_cosThetaMinus_r 
-        #print event.parton_cosThetaPlus_k  
-        #print event.parton_cosThetaMinus_k 
+    # reco quantities for delphesJet
+    if lepTop_parton and delphesJet:
+        boost_tt =  (lepTop_parton['p4'] + delphesJet_dict['p4']).BoostVector()
 
-        #print event.parton_cosThetaPlus_r_star  
-        #print event.parton_cosThetaMinus_r_star 
-        #print event.parton_cosThetaPlus_k_star  
-        #print event.parton_cosThetaMinus_k_star 
+        p4_lepTop = copy.deepcopy(lepTop_parton['p4'])
+        p4_hadTop = copy.deepcopy(delphesJet_dict['p4'])
+        p4_lep    = makeP4(lepTop_parton['lep'].p4()) 
 
-        #print event.parton_xi_nn 
-        #print event.parton_xi_rr 
-        #print event.parton_xi_kk 
+        p4_lepTop.Boost(-boost_tt)
+        p4_hadTop.Boost(-boost_tt)
+        p4_lep.Boost(-boost_tt)
+        p4_lep.Boost(-p4_lepTop.BoostVector())
 
-        #print event.parton_xi_nr_plus 
-        #print event.parton_xi_nr_minus
-        #print event.parton_xi_rk_plus 
-        #print event.parton_xi_rk_minus
-        #print event.parton_xi_nk_plus 
-        #print event.parton_xi_nk_minus
 
-        #print event.parton_cos_phi     
-        #print event.parton_cos_phi_lab 
-        #print event.parton_abs_delta_phi_ll_lab   
+        # Eq. 4.13 basis of the ttbar system
+        k_hat = p4_lepTop.Vect().Unit() if lepTop_parton['pdgId']==6 else p4_hadTop.Vect().Unit()
+        p_hat = ROOT.TVector3(0,0,1) # Eq. 4.13 Bernreuther! 
+        y = k_hat.Dot(p_hat)
+        r = sqrt( 1-y**2 )  
+        r_hat = 1./r*(p_hat - (k_hat*y) ) #This needs the import of fixTVecMul. 
+        n_hat = 1./r*(p_hat.Cross(k_hat))
 
-        #assert False, ""
+        # Eq 4.21 Bernreuther (k* and r*)
+        sign_ = float(np.sign(y)) # Bernreuther Table 5
+        sign_charge = -1 if  lepTop_parton['pdgId']==-6 else +1 # the l- in Bernreuther has a - for each axis. So we add a - to the axis if our lepton is negatively charged (coming from anti-top)
+        n_a = sign_charge*sign_*n_hat
+        r_a = sign_charge*sign_*r_hat
+        k_a = sign_charge*k_hat
+
+        sign_star = float(np.sign(abs(p4_lepTop.Rapidity()) - abs(p4_hadTop.Rapidity())))
+        sign_star*=sign_charge #correct sign if the lepTop is the antiTop
+
+        k_a_star = sign_star*k_hat
+        r_a_star = sign_star*sign_*r_hat
+
+        lep_unit       = p4_lep.Vect().Unit() 
+        lep_cosTheta_n = n_a.Dot(lep_unit)
+        lep_cosTheta_r = r_a.Dot(lep_unit)
+        lep_cosTheta_k = k_a.Dot(lep_unit)
+
+        lep_cosTheta_r_star = r_a_star.Dot(lep_unit)
+        lep_cosTheta_k_star = k_a_star.Dot(lep_unit)
+
+        jet_boost  = p4_hadTop.BoostVector() 
+        lep_lab_p4 = makeP4(lepTop_parton['lep'].p4())
+
+        for i_c, c in enumerate(delphesJet_constituents):
+            cand = delphesJet_dict['eflowCandsVec'][i_c]
+
+            # lab system
+            c["cos_phi_lab"]           = lep_lab_p4.Vect().Unit().Dot(cand.Vect().Unit())
+            c["abs_delta_phi_ll_lab"]  =  abs( deltaPhi( lep_lab_p4.Phi(), cand.Phi() ) )
+
+            cand.Boost( -boost_tt )
+            cand.Boost( -jet_boost )
+
+            cand_unit = cand.Vect().Unit()
+             
+            c["cosTheta_n"] = n_a.Dot(cand_unit)
+            c["cosTheta_r"] = r_a.Dot(cand_unit)
+            c["cosTheta_k"] = k_a.Dot(cand_unit)
+
+            c["cosTheta_r_star"] = r_a_star.Dot(cand_unit)
+            c["cosTheta_k_star"] = k_a_star.Dot(cand_unit)
+
+            # TOP-18-006 table 1 http://cds.cern.ch/record/2649926/files/TOP-18-006-pas.pdf
+            c["xi_nn"] = c["cosTheta_n"]*lep_cosTheta_n 
+            c["xi_rr"] = c["cosTheta_r"]*lep_cosTheta_r 
+            c["xi_kk"] = c["cosTheta_k"]*lep_cosTheta_k
+
+            c["xi_nr_plus"]  = c["cosTheta_n"]*lep_cosTheta_r + c["cosTheta_r"]*lep_cosTheta_n
+            c["xi_nr_minus"] = c["cosTheta_n"]*lep_cosTheta_r - c["cosTheta_r"]*lep_cosTheta_n
+            c["xi_rk_plus"]  = c["cosTheta_r"]*lep_cosTheta_k + c["cosTheta_k"]*lep_cosTheta_r
+            c["xi_rk_minus"] = c["cosTheta_r"]*lep_cosTheta_k - c["cosTheta_k"]*lep_cosTheta_r
+            c["xi_nk_plus"]  = c["cosTheta_n"]*lep_cosTheta_k + c["cosTheta_k"]*lep_cosTheta_n
+            c["xi_nk_minus"] = c["cosTheta_n"]*lep_cosTheta_k - c["cosTheta_k"]*lep_cosTheta_n
+
+            c["cos_phi"]     = cand_unit.Dot(lep_unit)
+
+        #px = [ p.Px() for p in delphesJet_dict['eflowCandsVec'] ]
+        #py = [ p.Py() for p in delphesJet_dict['eflowCandsVec'] ]
+        #pz = [ p.Pz() for p in delphesJet_dict['eflowCandsVec'] ]
+        #print sum(px), sum(np.abs(px)), sum(py), sum(np.abs(py)), sum(pz), sum(np.abs(pz))
+
+        fill_vector_collection( event, "eflow", cand_varnames, delphesJet_constituents)
+    else:
+        fill_vector_collection( event, "eflow", cand_varnames, [])
+
     # Delphes AK4 jets 
     allRecoJets = delphesReader.jets()
-
-    ## add btag info
-    #for i_btagWP, btagWP in enumerate(btagWPs):
-    #    count = 0
-    #    for jet in allRecoJets:
-    #        btag = ( jet["bTag"] & (2**i_btagWP) > 0 ) # Read b-tag bitmap
-    #        jet["bTag_"+btagWP] = btag
 
     # read jets
     recoJets =  filter( lambda j: _isGoodRecoJet(j), allRecoJets)
