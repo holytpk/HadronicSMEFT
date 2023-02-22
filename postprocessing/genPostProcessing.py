@@ -37,6 +37,7 @@ argParser.add_argument('--targetDir',          action='store',      default='v1'
 argParser.add_argument('--sample',             action='store',      default='tt1LepHad', help="Name of the sample loaded from fwlite_benchmarks. Only if no inputFiles are specified")
 argParser.add_argument('--inputFiles',         action='store',      nargs = '*', default=[])
 argParser.add_argument('--targetSampleName',   action='store',      help="Name of the sample if files are used.")
+argParser.add_argument('--targetFileName',     action='store',      default=None, type=str, help="targetFileName? If not specified, sample name is used")
 argParser.add_argument('--delphesEra',         action='store',      default = "RunII", choices = ["RunII", "ATLAS", "RunIICentral", "RunIInoDelphesIso", "RunIIPileUp", "PhaseII", "None"], help="specify delphes era")
 argParser.add_argument('--process',            action='store',      default = "ttbar", choices = ["ttbar", "WhadZlep"], help="Which process?")
 argParser.add_argument('--addReweights',       action='store_true', help="Add reweights?")
@@ -178,7 +179,7 @@ except:
     pass
 
 # output file & log files
-output_filename =  os.path.join(output_directory, sample.name + '.root')
+output_filename =  os.path.join(output_directory, (args.targetFileName if args.targetFileName is not None else sample.name)+ '.root')
 _logger.   add_fileHandler( output_filename.replace('.root', '.log'), args.logLevel )
 _logger_rt.add_fileHandler( output_filename.replace('.root', '_rt.log'), args.logLevel )
 
@@ -353,9 +354,10 @@ if os.path.exists( output_filename ) and checkRootFile( output_filename, checkFo
 # relocate original
 sample.copy_files( os.path.join(tmp_output_directory, "input") )
 
+assert False, ""
 # run Delphes
 if args.delphesEra is not None:
-    delphes_file = os.path.join( output_directory, 'delphes', sample.name+'.root' )
+    delphes_file = os.path.join( output_directory, 'delphes', os.path.basename(output_filename) )
     if      ( not os.path.exists( delphes_file )) or \
             ( os.path.exists( delphes_file ) and not checkRootFile( delphes_file, checkForObjects=["Delphes"])) or \
             args.overwrite in ['all']:
