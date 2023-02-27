@@ -319,8 +319,6 @@ if args.delphesEra is not None:
     variables += ["recoMet_pt/F", "recoMet_phi/F"]
     variables += ["delphesGenMet_pt/F", "delphesGenMet_phi/F"]
 
-logger.info( "Running over files: %s", ", ".join(sample.files ) )
-
 readers = []
 
 # FWLite reader 
@@ -354,7 +352,8 @@ if os.path.exists( output_filename ) and checkRootFile( output_filename, checkFo
 # relocate original
 sample.copy_files( os.path.join(tmp_output_directory, "input") )
 
-assert False, ""
+logger.info( "Running over files: %s", ", ".join(sample.files ) )
+
 # run Delphes
 if args.delphesEra is not None:
     delphes_file = os.path.join( output_directory, 'delphes', os.path.basename(output_filename) )

@@ -65,6 +65,8 @@ eft_configs = [
     {'color':ROOT.kBlack,       'param':{}, 'tex':"SM"},
     {'color':ROOT.kMagenta-4,   'param':{'ctWRe':-1},  'tex':"Re(c_{tW})=-1",  'binning':[20,0,1.5]},
     {'color':ROOT.kMagenta+2,   'param':{'ctWRe':1},   'tex':"Re(c_{tW})=1",   'binning':[20,0,1.5]},
+    {'color':ROOT.kOrange-4,    'param':{'ctWIm':-1},  'tex':"Im(c_{tW})=-1",  'binning':[20,0,1.5]},
+    {'color':ROOT.kOrange+2,    'param':{'ctWIm':1},   'tex':"Im(c_{tW})=1",   'binning':[20,0,1.5]},
     {'color':ROOT.kGreen-4,     'param':{'ctGRe':-1},  'tex':"Re(c_{tG})=-1",  'binning':[20,0,1.5]},
     {'color':ROOT.kGreen+2,     'param':{'ctGRe':1},   'tex':"Re(c_{tG})=1",   'binning':[20,0,1.5]},
     {'color':ROOT.kBlue-4,      'param':{'ctGIm':-1},  'tex':"Im(c_{tG})=-1",  'binning':[20,0,1.5]},
