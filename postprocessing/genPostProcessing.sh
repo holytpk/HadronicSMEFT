@@ -1,5 +1,4 @@
-
-python genPostProcessing.py --addReweights --targetDir v9 --trainingCoefficients ctGRe ctGIm ctWRe ctWIm ctBRe ctBIm cHtbRe cHtbIm cHt --sample TT01jDebug --process ttbar --delphesEra ATLAS --removeDelphesFiles #SPLIT199 
+python genPostProcessing.py --addReweights --targetDir v10 --trainingCoefficients ctGRe ctGIm ctWRe ctWIm ctBRe ctBIm cHtbRe cHtbIm cHt --sample TT01j_HT800_ext TT01jDebug --process ttbar --delphesEra ATLAS --removeDelphesFiles #SPLIT866 
 #python genPostProcessing.py --addReweights --targetDir v8 --trainingCoefficients ctGRe ctGIm ctWRe ctWIm ctBRe ctBIm cHtbRe cHtbIm cHt --sample TT01j1l    --process ttbar --delphesEra ATLAS --removeDelphesFiles #SPLIT200 
 
 #python genPostProcessing.py --addReweights --targetDir v8 --trainingCoefficients cHDD cHbox cW cWtil cHW cHWtil cHWB cHB cHWBtil --sample WhadZlepJJ --process WhadZlep --delphesEra ATLAS --removeDelphesFiles #SPLIT200 

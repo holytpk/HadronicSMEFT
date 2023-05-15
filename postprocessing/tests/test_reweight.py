@@ -8,9 +8,9 @@ import RootTools.core.logger as _logger_rt
 logger    = _logger.get_logger(   'DEBUG', logFile = None)
 logger_rt = _logger_rt.get_logger('INFO', logFile = None)
 
-#weightInfo = WeightInfo("/eos/vbc/user/robert.schoefbeck/test_reweighting/reweight_card.pkl")
-weightInfo = WeightInfo("/eos/vbc/user/robert.schoefbeck/gridpacks/flavor/vec/ttZ01j-vec_reweight_card.pkl")
+weightInfo = WeightInfo("/eos/vbc/group/cms/robert.schoefbeck/gridpacks/ParticleNet/TT01jDebug_reweight_card.pkl")
 weightInfo.set_order(2)
+
 # get list of values of ref point in correct order
 ref_point_coordinates = [weightInfo.ref_point_coordinates[var] for var in weightInfo.variables]
 
@@ -18,7 +18,7 @@ hyperPoly  = HyperPoly( weightInfo.order )
 
 logger.info( "Coefficients: %i (%s), order: %i number of weights: %i", len(weightInfo.variables), ",".join(weightInfo.variables), weightInfo.order,  weightInfo.nid)
 
-max_n = 3
+max_n = 1
 
 def interpret_weight(weight_id):
     str_s = weight_id.split('_')
@@ -27,18 +27,16 @@ def interpret_weight(weight_id):
         res[str_s[2*i]] = float(str_s[2*i+1].replace('m','-').replace('p','.'))
     return res
 
-# from here on miniAOD specific:
-#miniAOD = FWLiteSample.fromFiles("miniAOD", ["/eos/vbc/user/robert.schoefbeck/test_reweighting/miniAODSIM.root"])
-#miniAOD = FWLiteSample.fromFiles("miniAOD", ["/users/robert.schoefbeck/CMS/test/CMSSW_10_2_22/src/Samples/crab/gen/reco_FastSim_LO_0j_102X_CP5_FastSim.root"])
-miniAOD = FWLiteSample.fromFiles("miniAOD", ["/eos/vbc/user/robert.schoefbeck/miniAODSim_fast_private/flavor_vec_ttZ01j_schoef-flavor_vec_ttZ01j-c54a772d74cd107a1191ec379d5aa477_USER/MINIAODSIMoutput_338.root"])
-logger.info("Compute parametrisation from miniAOD relying on the same sequence of weights as in the card file.")
+# from here on GEN specific:
+GEN = FWLiteSample.fromFiles("GEN", ["root://eos.grid.vbc.ac.at//store/user/schoef/PNet/PNet/230120_201705/0000/GEN_LO_0j_102X_172.root"])
+logger.info("Compute parametrisation from GEN relying on the same sequence of weights as in the card file.")
 
-fwliteReader = miniAOD.fwliteReader( products = { 'lhe':{'type':'LHEEventProduct', 'label':("externalLHEProducer")}} )
+fwliteReader = GEN.fwliteReader( products = { 'lhe':{'type':'LHEEventProduct', 'label':("externalLHEProducer")}} )
 fwliteReader.start()
 counter=0
 
-p_C_miniAOD = []
-rw_miniAOD_debug  = [] # not needed to store base point weights
+p_C_GEN = []
+rw_GEN_debug  = [] # not needed to store base point weights
 
 while fwliteReader.run( ):
     lhe_weights = fwliteReader.products['lhe'].weights()
@@ -56,9 +54,9 @@ while fwliteReader.run( ):
         # weight data for interpolation
         if not hyperPoly.initialized:
             param_points.append( tuple(interpreted_weight[var] for var in weightInfo.variables) )
-            logger.debug( "Weight %s -> base point %r. val: %f", weight.id, param_points[-1], weight.wgt ) 
+            logger.debug( "%s -> %r : %+12.10e", weight.id, param_points[-1], weight.wgt ) 
 
-    rw_miniAOD_debug.append( weights ) 
+    rw_GEN_debug.append( weights ) 
     # Initialize with Reference Point
 
     if not hyperPoly.initialized: 
@@ -74,11 +72,32 @@ while fwliteReader.run( ):
     
 #        for n in xrange(hyperPoly.ndof):
 #            event.p_C[n] = coeff[n]
-    p_C_miniAOD.append( [ coeff[n] for n in xrange(hyperPoly.ndof) ] )
+    p_C_GEN.append( [ coeff[n] for n in xrange(hyperPoly.ndof) ] )
+
+    print "Check closure"
+    for i_param_point, param_point in enumerate(param_points):
+        param_point_coords = {key:val for key, val in zip(weightInfo.variables, param_point)}
+
+        for i_comb, comb in enumerate(weightInfo.combinations):
+            # constant
+            if len(comb)==0:
+                w = coeff[i_comb]
+            # add linear
+            if len(comb)==1:
+                w += param_point_coords[comb[0]]*coeff[i_comb]
+            # quadratic
+            elif len(comb)==2:
+                w += param_point_coords[comb[0]]*param_point_coords[comb[1]]*coeff[i_comb]
+        diff = w- weights[i_param_point]
+        #if abs(diff)/abs(weights[i_param_point])>0.05:
+        if True:
+            print " ".join( ["%s:%i"%(key, val) for key, val in param_point_coords.items() if val!=0 ] )
+            print param_point, "original", weights[i_param_point], "predicted", w, "difference", w- weights[i_param_point] 
 
     counter+=1
     if counter>=max_n:
         break
+
 
 assert False, ""
 
@@ -156,8 +175,6 @@ while reader.run():
     if chi2_ndof > 10**-6:
         logger.warning( "chi2_ndof is large: %f", chi2_ndof )
 
-#    for n in xrange( hyperPoly.ndof ):
-#        p_C[n] = coeff[n]
     p_C_nanoAOD.append( [ coeff[n] for n in xrange(hyperPoly.ndof) ] )
 
     counter+=1
