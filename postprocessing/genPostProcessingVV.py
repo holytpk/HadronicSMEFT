@@ -471,7 +471,7 @@ def filler( event ):
     if len(Z_partons)<1 or len(W_partons)<1: return
 
     # sanity
-    assert len(W_partons)==len(Z_partons)==1 , "Not a WhadZlep candidate event!"
+    #assert len(W_partons)==len(Z_partons)==1 , "Not a WZ candidate event!"
 
     W, Z = {}, {}
 
@@ -510,7 +510,7 @@ def filler( event ):
 
     hadV_parton = W if W['isHad'] else Z
     lepV_parton = W if W['isLep'] else Z
-    assert hadV_parton!=lepV_parton, "Not a semileptonic diboson event!"
+    if (W['isHad'] and Z['isHad']) or (W['isLep'] and Z['isLep']): return #sanity
 
     # make AK8 jets from Delphes EFlow
     if args.delphesEra is not None:
