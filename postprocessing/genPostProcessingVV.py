@@ -184,11 +184,10 @@ output_filename =  os.path.join(output_directory, (args.targetFileName if args.t
 _logger.   add_fileHandler( output_filename.replace('.root', '.log'), args.logLevel )
 _logger_rt.add_fileHandler( output_filename.replace('.root', '_rt.log'), args.logLevel )
 
-# small helpers
+# helpers
 def makeP4(cand):
      v = ROOT.TLorentzVector()
      v.SetPtEtaPhiM(cand.pt(),cand.eta(),cand.phi(),cand.mass())
-
      return v
 
 def varnames( vec_vars ):
@@ -259,6 +258,8 @@ variables += ["parton_lepV_pt/F",   "parton_lepV_eta/F",   "parton_lepV_phi/F", 
 variables += ["parton_lepV_l1_pt/F", "parton_lepV_l1_eta/F", "parton_lepV_l1_phi/F", "parton_lepV_l1_mass/F", "parton_lepV_l1_pdgId/I"]
 variables += ["parton_lepV_l2_pt/F", "parton_lepV_l2_eta/F", "parton_lepV_l2_phi/F", "parton_lepV_l2_mass/F", "parton_lepV_l2_pdgId/I"]
 
+variables += ["parton_hadV_theta/F", "parton_hadV_Theta/F", "parton_hadV_phi/F"]
+
 if args.delphesEra is not None:
     variables += ["delphesJet_dR_matched_hadV_parton/F", "delphesJet_dR_lepV_parton/F", "delphesJet_dR_hadV_q1/F", "delphesJet_dR_hadV_q2/F", "delphesJet_dR_hadV_maxq1q2/F"] 
     variables += ["delphesJet_pt/F", "delphesJet_eta/F", "delphesJet_phi/F", "delphesJet_mass/F", "delphesJet_nConstituents/I"] 
@@ -281,15 +282,15 @@ if args.delphesEra is not None:
         variables.append( "delphesJet_%s/F"%name )
 
     cand_vars                =  "pt/F,etarel/F,phirel/F,eta/F,phi/F,pdgId/I,charge/I,type/I"
-    hadV_daughter_parton_vars = "pt/F,etarel/F,phirel/F,eta/F,phi/F,pdgId/I"
+    #hadV_daughter_parton_vars = "pt/F,etarel/F,phirel/F,eta/F,phi/F,pdgId/I"
 
     # storing the truth information in the vector, so we can learn it
     for coeff in args.trainingCoefficients:
         cand_vars+=",truth_"+coeff+"_lin/F" 
         cand_vars+=",truth_"+coeff+"_quad/F" 
 
-    variables.append(VectorTreeVariable.fromString("hadV_daughter_partons[%s]"%(hadV_daughter_parton_vars), nMax=3 ))
-    hadV_daughter_parton_varnames = varnames( hadV_daughter_parton_vars )
+    #variables.append(VectorTreeVariable.fromString("hadV_daughter_partons[%s]"%(hadV_daughter_parton_vars), nMax=3 ))
+    #hadV_daughter_parton_varnames = varnames( hadV_daughter_parton_vars )
 
     cand_varnames    =  varnames( cand_vars )
     nCandMax = 200
@@ -491,7 +492,7 @@ def filler( event ):
         V['isLep'] = abs(V['last'].daughter(0).pdgId()) in [11,12,13,14,15,16] 
         V['pdgId'] = V['parton'].pdgId()
         V['isHad'] = not V['isLep']
-        V['p4']    = makeP4( V['parton'] )
+        V['p4']    = makeP4( V['last'] ) #take the V momentum before decay
         V['pt']   = V['p4'].Pt()
         V['eta']  = V['p4'].Eta()
         V['phi']  = V['p4'].Phi()
@@ -623,17 +624,13 @@ def filler( event ):
         event.parton_hadV_q2_mass = hadV_parton['q2'].mass()
         event.parton_hadV_q2_pdgId= hadV_parton['q2'].pdgId()
 
-        # compute theta and phi (Suman approved)
-        beam = ROOT.TLorentzVector()
-        beam.SetPxPyPzE(0,0,6500,6500)
+        #boost_V = hadV_parton['p4'].BoostVector()
 
-        boost_V = hadV_parton['p4'].BoostVector()
-
-        # copy the vectors, originals will still be needed
-        q1_p4 = copy.deepcopy(hadV_parton['q1_p4'])
-        q2_p4 = copy.deepcopy(hadV_parton['q2_p4'])
-        q1_p4 .Boost(-boost_V)
-        q2_p4 .Boost(-boost_V)
+        ## copy the vectors, originals will still be needed
+        #q1_p4 = copy.deepcopy(hadV_parton['q1_p4'])
+        #q2_p4 = copy.deepcopy(hadV_parton['q2_p4'])
+        #q1_p4 .Boost(-boost_V)
+        #q2_p4 .Boost(-boost_V)
 
         #    n_scatter = ((beam.Vect().Unit()).Cross(W_p4.Vect())).Unit()
         #    n_decay   = (q1_p4.Vect().Cross(q2_p4.Vect())).Unit()
@@ -656,7 +653,6 @@ def filler( event ):
         #    del W_p4, q1_p4, q2_p4
 
         # Leptonic boson parton
-
         event.parton_lepV_pt      = lepV_parton['pt']
         event.parton_lepV_eta     = lepV_parton['eta']
         event.parton_lepV_phi     = lepV_parton['phi']
@@ -674,16 +670,39 @@ def filler( event ):
         event.parton_lepV_l2_mass       = lepV_parton['l2'].mass()
         event.parton_lepV_l2_pdgId      = lepV_parton['l2'].pdgId()
 
+
+        # compute theta and phi 
+        beam_p4 = ROOT.TLorentzVector()
+        beam_p4.SetPxPyPzE(0,0,6500,6500)
+        hadV_p4 = copy.deepcopy( hadV_parton['p4'] )
+        lepV_p4 = copy.deepcopy( lepV_parton['p4'] )
+        q1_p4   = copy.deepcopy( hadV_parton['q1_p4'] )
+        q2_p4   = copy.deepcopy( hadV_parton['q2_p4'] )
+
         boost_VV =  (lepV_parton['p4'] + hadV_parton['p4']).BoostVector()
 
-        # reco quantities for delphesJet
-        if args.delphesEra is not None and delphesJet:
-            boost_VV =  (lepV_parton['p4'] + delphesJet_dict['p4']).BoostVector()
-            p4_hadV = copy.deepcopy(delphesJet_dict['p4'])
-            p4_lepV = copy.deepcopy(lepV_parton['p4'])
+        beam_p4 .Boost(-boost_VV)
+        hadV_p4 .Boost(-boost_VV) 
+        lepV_p4 .Boost(-boost_VV) 
+        q1_p4   .Boost(-boost_VV)
+        q2_p4   .Boost(-boost_VV)
 
-            p4_lepV.Boost(-boost_VV)
-            p4_hadV.Boost(-boost_VV)
+        #hadV_p4.Print()
+        #(q1_p4+q2_p4).Print()
+
+        n_scatter = ((beam_p4.Vect().Unit()).Cross(hadV_p4.Vect())).Unit()
+        n_decay   = (q1_p4.Vect().Cross(q2_p4.Vect())).Unit()
+        
+        event.parton_hadV_Theta = beam_p4.Angle(hadV_p4.Vect())
+        event.parton_hadV_phi   = n_scatter.Angle(n_decay)
+
+        boost_V = hadV_p4.BoostVector()
+        hadV_p4 .Boost( -boost_V )
+        q1_p4   .Boost( -boost_V )
+
+        event.parton_hadV_theta = q1_p4.Angle(hadV_p4.Vect())
+
+        #print event.parton_hadV_Theta, event.parton_hadV_phi, event.parton_hadV_theta
 
 
     if args.delphesEra is not None:
@@ -691,12 +710,7 @@ def filler( event ):
         #    if (lepTop_parton and delphesJet): # we only fill if we have a lepTop because we take the gen-lepton (not the reco'd)
         #        fill_vector_collection( event, "top_daughter_partons", top_daughter_parton_varnames, top_daughter_partons)
         #        fill_vector_collection( event, "eflow", cand_varnames, delphesJet_constituents)
-        #    else:
-        #        fill_vector_collection( event, "top_daughter_partons", top_daughter_parton_varnames, [])
-        #elif args.process=="WhadZlep" and delphesJet:
-        #    fill_vector_collection( event, "eflow", cand_varnames, delphesJet_constituents)
-        #else:
-        #    fill_vector_collection( event, "eflow", cand_varnames, [])
+        fill_vector_collection( event, "eflow", cand_varnames, delphesJet_constituents if delphesJet is not None else [])
 
         # Delphes AK4 jets 
         allRecoJets = delphesReader.jets()
