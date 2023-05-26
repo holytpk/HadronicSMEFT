@@ -28,4 +28,4 @@ WhadZlepJJ = FWLiteSample.fromDAS("WhadZlepJJ", "/PNet_WhadZlepJJ/schoef-PNet_Wh
 WhadZlepJJ.reweight_pkl = "/eos/vbc/group/cms/robert.schoefbeck/gridpacks/ParticleNet/WhadZlepJJ_EWK_LO_SM_mjj100_pTj10_reweight_card.pkl"
 
 WZto1L1Nu_HT800 = FWLiteSample.fromDAS("WZto1L1Nu_HT800", "/PNet_WZto1L1Nu_HT800/schoef-PNet_WZto1L1Nu_HT800-6f9b96e49dc64ec77fff158a39815098/USER", dbFile=dbFile, instance="phys03", prefix="root://eos.grid.vbc.ac.at/")
-WZto1L1Nu_HT800.reweight_pkl = "/eos/vbc/group/cms/robert.schoefbeck/gridpacks/ParticleNet/WZto1L1Nu_reweight_card.pkl"
+WZto1L1Nu_HT800.reweight_pkl = "/eos/vbc/group/cms/robert.schoefbeck/gridpacks/ParticleNet/WZto1L1Nu_HT800_reweight_card.pkl"
