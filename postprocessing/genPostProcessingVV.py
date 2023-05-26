@@ -656,7 +656,7 @@ def filler( event ):
         #genJet_p4.Print()
         #print
         for p in cands_list:
-            p['phirel'] = deltaPhi(p['phi'], event.genJet_phi, returnAbs=False)
+            p['phirel'] = deltaPhi(event.genJet_phi, p['phi'], returnAbs=False)
             p['etarel'] = p['eta'] - event.genJet_eta
             p['p4'] = makeP4(gen_particles[p['index']])
             p['p4'].Boost( -boost_VV )
@@ -806,7 +806,7 @@ def filler( event ):
 
         for i_p, p in enumerate(delphesJet_constituents):
             #p.update( truth_weight_dict ) # store truth information per particle 
-            p['phirel'] = deltaPhi(delphesJet.phi(), p['phi'], returnAbs=False)
+            p['phirel'] = deltaPhi(p['phi'], delphesJet.phi(), returnAbs=False)
             p['etarel'] = p['eta'] - delphesJet.eta() 
             if not p.has_key('charge'):p['charge']=0
             p_p4 = eflowCandsVec[i_p]
