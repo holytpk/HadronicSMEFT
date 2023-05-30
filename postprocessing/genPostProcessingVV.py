@@ -33,7 +33,7 @@ argParser.add_argument('--logLevel',           action='store',      default='INF
 argParser.add_argument('--small',              action='store_true', help='Run only on a small subset of the data?')#, default = True)
 argParser.add_argument('--miniAOD',            action='store_true', help='miniAOD sample?')#, default = True)
 argParser.add_argument('--overwrite',          action='store',      nargs='?', choices = ['none', 'all', 'target'], default = 'none', help='Overwrite?')#, default = True)
-argParser.add_argument('--targetDir',          action='store',      default='v2')
+argParser.add_argument('--targetDir',          action='store',      default='v3')
 #argParser.add_argument('--sample',             action='store',      default='tt1LepHad', help="Name of the sample loaded from fwlite_benchmarks. Only if no inputFiles are specified")
 argParser.add_argument('--samples',            action='store',      nargs='*',  type=str, default=['WhadZlepJJ'], help="List of samples to be post-processed" )
 argParser.add_argument('--inputFiles',         action='store',      nargs = '*', default=[])
@@ -64,7 +64,7 @@ if len(args.inputFiles)>0:
 #    logger.debug( 'Loaded sample %s with %i files.', sample.name, len(sample.files) )
  
 else:
-    sample_file = "$CMSSW_BASE/python/HadronicSMEFT/Samples/genVV_v2.py"
+    sample_file = "$CMSSW_BASE/python/HadronicSMEFT/Samples/genVV_v3.py"
     all_samples = imp.load_source( "samples", os.path.expandvars( sample_file ) )
     samples = [ getattr( all_samples, s ) for s in args.samples ]
     if len(samples) == 1:
@@ -602,10 +602,11 @@ def filler( event ):
     
     event.parton_hadV_Theta = beam_p4.Angle(hadV_p4.Vect())
 
-    sign_flip =  1 if ( ((n_scatter.Cross(n_decay))*(hadV_p4.Vect())) > 0 ) else -1
+    #sign_flip =  1 if ( ((n_scatter.Cross(n_decay))*(hadV_p4.Vect())) > 0 ) else -1
 
     try:
-        event.parton_hadV_phi   = sign_flip*acos(n_scatter.Dot(n_decay))  
+        #event.parton_hadV_phi   = sign_flip*acos(n_scatter.Dot(n_decay))  
+        event.parton_hadV_phi   = acos(n_scatter.Dot(n_decay))  
     except:
         pass
 
