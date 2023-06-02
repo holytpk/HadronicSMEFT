@@ -8,7 +8,7 @@ import os, sys, imp, uuid
 import copy, shutil
 import ROOT
 ROOT.gROOT.SetBatch(True)
-from math                             import sqrt, cos, sin, pi, acos, cosh, sinh, atan2
+from math                             import sqrt, cos, sin, pi, acos, cosh, sinh, atan2, log
 import numpy as np
 #RootTools
 from RootTools.core.standard          import *
@@ -45,7 +45,6 @@ argParser.add_argument('--nJobs',              action='store',      nargs='?', t
 argParser.add_argument('--job',                action='store',      nargs='?', type=int, default=0,  help="Run only job i")
 argParser.add_argument('--removeDelphesFiles', action='store_true', help="remove Delphes file after postprocessing?")
 argParser.add_argument('--interpolationOrder', action='store',      nargs='?', type=int, default=2,  help="Interpolation order for EFT weights.")
-argParser.add_argument('--trainingCoefficients', action='store',    nargs='*', default=['cW', 'cWtil'],  help="Training vectors for particle net")
 args = argParser.parse_args()
 
 # Logger
@@ -236,11 +235,6 @@ elif args.delphesEra == "None":
     delphesCard     = None
     args.delphesEra = None
 
-if args.addReweights:
-    # for each Wilson coefficient listed in args.trainingCoefficients, store a separate length-3 ntuple of ('w0'*10**6, 'w1', 'w2') to facilitate particle-net training 
-    for coefficient in args.trainingCoefficients:    
-        variables += [VectorTreeVariable.fromString("%s[coeff/F]"%coefficient, nMax=3 )]
-
 # EDM standard variables
 variables  += ["run/I", "lumi/I", "evt/l"]
 
@@ -259,9 +253,9 @@ variables += ["parton_lepV_pt/F",   "parton_lepV_eta/F",   "parton_lepV_phi/F", 
 variables += ["parton_lepV_l1_pt/F", "parton_lepV_l1_eta/F", "parton_lepV_l1_phi/F", "parton_lepV_l1_mass/F", "parton_lepV_l1_pdgId/I"]
 variables += ["parton_lepV_l2_pt/F", "parton_lepV_l2_eta/F", "parton_lepV_l2_phi/F", "parton_lepV_l2_mass/F", "parton_lepV_l2_pdgId/I"]
 
-variables += ["parton_hadV_theta/F", "parton_hadV_Theta/F", "parton_hadV_phi/F"]
+variables += ["parton_hadV_angle_theta/F", "parton_hadV_angle_Theta/F", "parton_hadV_angle_phi/F"]
 
-variables += ["genJet_pt/F", "genJet_eta/F", "genJet_phi/F", "genJet_mass/F", "genJet_nConstituents/I", "genJet_isMuon/I", "genJet_isElectron/I", "genJet_isPhoton/I"]
+variables += ["genJet_pt/F", "genJet_eta/F", "genJet_phi/F", "genJet_mass/F", "genJet_nConstituents/I", "genJet_isMuon/I", "genJet_isElectron/I", "genJet_isPhoton/I", "genJet_rapidity/F"]
 variables += ['genJet_SDmass/F',
               'genJet_SDsubjet0_eta/F', 'genJet_SDsubjet0_deltaEta/F', 'genJet_SDsubjet0_phi/F', 'genJet_SDsubjet0_deltaPhi/F', 'genJet_SDsubjet0_deltaR/F', 'genJet_SDsubjet0_mass/F',
               'genJet_SDsubjet1_eta/F', 'genJet_SDsubjet1_deltaEta/F', 'genJet_SDsubjet1_phi/F', 'genJet_SDsubjet1_deltaPhi/F', 'genJet_SDsubjet1_deltaR/F', 'genJet_SDsubjet1_mass/F',
@@ -271,17 +265,17 @@ for i_ecf, (name, _) in enumerate( ecfs ):
 
 variables += ["dR_genJet_q1/F", "dR_genJet_q2/F", "dR_genJet_maxq1q2/F"]
 
-variables += ["gen_beam_dPhi/F", "gen_beam_Dy/F", "gen_beam_Deta/F", "gen_beam_dR/F", "gen_beam_gamma/F"]
+variables += ["gen_beam_VV_phi/F", "gen_beam_VV_theta/F", "gen_beam_Dy/F"]
 
 if args.delphesEra is not None:
     variables += ["delphesJet_dR_matched_hadV_parton/F", "delphesJet_dR_lepV_parton/F", "delphesJet_dR_hadV_q1/F", "delphesJet_dR_hadV_q2/F", "delphesJet_dR_hadV_maxq1q2/F"] 
-    variables += ["delphesJet_pt/F", "delphesJet_eta/F", "delphesJet_phi/F", "delphesJet_mass/F", "delphesJet_nConstituents/I"] 
+    variables += ["delphesJet_pt/F", "delphesJet_eta/F", "delphesJet_phi/F", "delphesJet_mass/F", "delphesJet_nConstituents/I", "delphesJet_rapidity/F"] 
     variables += ['delphesJet_SDmass/F', 
                   'delphesJet_SDsubjet0_eta/F', 'delphesJet_SDsubjet0_deltaEta/F', 'delphesJet_SDsubjet0_phi/F', 'delphesJet_SDsubjet0_deltaPhi/F', 'delphesJet_SDsubjet0_deltaR/F', 'delphesJet_SDsubjet0_mass/F', 
                   'delphesJet_SDsubjet1_eta/F', 'delphesJet_SDsubjet1_deltaEta/F', 'delphesJet_SDsubjet1_phi/F', 'delphesJet_SDsubjet1_deltaPhi/F', 'delphesJet_SDsubjet1_deltaR/F', 'delphesJet_SDsubjet1_mass/F', 
                   'delphesJet_tau1/F', 'delphesJet_tau2/F', 'delphesJet_tau3/F', 'delphesJet_tau4/F', 'delphesJet_tau21/F', 'delphesJet_tau32/F']
 
-    variables += ["delphes_beam_dPhi/F", "delphes_beam_Dy/F", "delphes_beam_Deta/F", "delphes_beam_dR/F", "delphes_beam_gamma/F"]
+    variables += ["delphes_beam_VV_phi/F", "delphes_beam_VV_theta/F", "delphes_beam_Dy/F"]
 
 # enumeration according to PF type: https://github.com/cms-sw/cmssw/blob/master/DataFormats/ParticleFlowCandidate/interface/PFCandidate.h#L44-L52
 categories = [
@@ -292,7 +286,8 @@ categories = [
     {'name':'neh', 'type':5, 'eflow_func':lambda p:abs(p['pdgId'])>100 and p['charge']==0, 'gen_func':lambda p:abs(p['pdgId'])>100 and p['charge']==0 }, #neutral hadrons
 ]
 
-cand_vars                =  "pt/F,etarel/F,phirel/F,eta/F,phi/F,pdgId/I,charge/I,type/I,Dy/F,Deta/F,Dphi/F,dR/F,gamma/F,Dgamma/F"
+#cand_vars                =  "pt/F,etarel/F,phirel/F,eta/F,phi/F,pdgId/I,charge/I,type/I,Dy/F,Deta/F,Dphi/F,dR/F,gamma/F,Dgamma/F"
+cand_vars                =  "pt_lab/F,p_lab/F,Deta_lab/F,Dphi_lab/F,Dy_lab/F,dR_lab/F,gamma_lab/F,pdgId/I,charge/I,type/I,p_VV/F,pInJetDir_VV/F,Dy_VV/F,Dy_VV/F,Theta_VV/F,phi_VV/F"
 cand_varnames    =  varnames( cand_vars )
 nCandMax = 200
 
@@ -303,11 +298,6 @@ if args.delphesEra is not None:
         variables.append( "delphesJet_%s/F"%name )
 
     #hadV_daughter_parton_vars = "pt/F,etarel/F,phirel/F,eta/F,phi/F,pdgId/I"
-
-    # storing the truth information in the vector, so we can learn it
-    for coeff in args.trainingCoefficients:
-        cand_vars+=",truth_"+coeff+"_lin/F" 
-        cand_vars+=",truth_"+coeff+"_quad/F" 
 
     #variables.append(VectorTreeVariable.fromString("hadV_daughter_partons[%s]"%(hadV_daughter_parton_vars), nMax=3 ))
     #hadV_daughter_parton_varnames = varnames( hadV_daughter_parton_vars )
@@ -449,18 +439,6 @@ def filler( event ):
         for n in xrange(hyperPoly.ndof):
             event.p_C[n] = coeff[n]
 
-        ## convinience coefficient vectors for particlenet training
-        #truth_weight_dict = {}
-        #for coefficient in args.trainingCoefficients:
-        #    setattr(event, "n"+coefficient, 3)
-        #    getattr(event, coefficient+"_coeff")[0] = event.p_C[0]*10**6
-        #    index_lin  = weightInfo.combinations.index((coefficient,))
-        #    index_quad = weightInfo.combinations.index((coefficient, coefficient))
-        #    getattr(event, coefficient+"_coeff")[1] = event.p_C[index_lin]/event.p_C[0] 
-        #    getattr(event, coefficient+"_coeff")[2] = event.p_C[index_quad]/event.p_C[0]
-        #    truth_weight_dict["truth_"+coefficient+"_lin"] = event.p_C[index_lin]/event.p_C[0]
-        #    truth_weight_dict["truth_"+coefficient+"_quad"] = event.p_C[index_quad]/event.p_C[0]
-
     # genJets
     ak8GenJets = fwliteReader.products['ak8GenJets']
     genJets    = filter( lambda j: genJetId(j, miniAOD=args.miniAOD), ak8GenJets )
@@ -600,20 +578,19 @@ def filler( event ):
     n_scatter = ((beam_p4.Vect().Unit()).Cross(hadV_p4.Vect())).Unit()
     n_decay   = (q1_p4.Vect().Cross(q2_p4.Vect())).Unit()
     
-    event.parton_hadV_Theta = beam_p4.Angle(hadV_p4.Vect())
+    event.parton_hadV_angle_Theta = beam_p4.Angle(hadV_p4.Vect())
 
-    #sign_flip =  1 if ( ((n_scatter.Cross(n_decay))*(hadV_p4.Vect())) > 0 ) else -1
+    sign_flip =  1 if ( ((n_scatter.Cross(n_decay))*(hadV_p4.Vect())) > 0 ) else -1
 
     try:
-        #event.parton_hadV_phi   = sign_flip*acos(n_scatter.Dot(n_decay))  
-        event.parton_hadV_phi   = acos(n_scatter.Dot(n_decay))  
+        event.parton_hadV_angle_phi   = sign_flip*acos(n_scatter.Dot(n_decay))  
     except:
         pass
 
     boost_V = hadV_p4.BoostVector()
     q1_p4   .Boost( -boost_V )
 
-    event.parton_hadV_theta = q1_p4.Angle(hadV_p4.Vect())
+    event.parton_hadV_angle_theta = q1_p4.Angle(hadV_p4.Vect())
     #print event.parton_hadV_Theta, event.parton_hadV_phi, event.parton_hadV_theta
 
     # genJet 
@@ -640,37 +617,57 @@ def filler( event ):
         cands_list.sort( key = lambda p:-p['pt'] )
         cands_list = cands_list[:nCandMax]
 
-        genJet_p4 = ROOT.TLorentzVector()
-        genJet_p4.SetPtEtaPhiM(event.genJet_pt, event.genJet_eta, event.genJet_phi, event.genJet_mass)
-        boost_VV =  (lepV_parton['p4'] + genJet_p4).BoostVector()
-        beam_p4 = ROOT.TLorentzVector()
-        beam_p4.SetPxPyPzE(0,0,6500,6500)
-        beam_p4  .Boost( -boost_VV )
-        genJet_p4.Boost( -boost_VV )
+        # make genJet
+        genJet_p4_VV = ROOT.TLorentzVector()
+        genJet_p4_VV.SetPtEtaPhiM(event.genJet_pt, event.genJet_eta, event.genJet_phi, event.genJet_mass)
+        event.genJet_rapidity = genJet_p4_VV.Rapidity()
+        # boost to VV rest frame
+        boost_VV =  (lepV_parton['p4'] + genJet_p4_VV).BoostVector()
+        genJet_p4_VV.Boost( -boost_VV )
+        # rotate genJet into z axis
+        rot_phi = -genJet_p4_VV.Phi()
+        genJet_p4_VV.RotateZ( rot_phi )
+        rot_theta = -genJet_p4_VV.Theta()
+        genJet_p4_VV.RotateY( rot_theta )
+        # do the same with beam direction
+        beam_p4_VV = ROOT.TLorentzVector()
+        beam_p4_VV.SetPxPyPzE(0,0,6500,6500)
+        beam_p4_VV  .Boost( -boost_VV )
+        beam_p4_VV.RotateZ( rot_phi )
+        beam_p4_VV.RotateY( rot_theta )
+        # rotate beam to phi=0 wrt to the jet axis
+        rot_phi_beam = -beam_p4_VV.Phi()
+        beam_p4_VV.RotateZ( rot_phi_beam )
 
-        event.gen_beam_dPhi = deltaPhi( genJet_p4.Phi(),  beam_p4.Phi(), returnAbs=False) #phi2-phi1
-        event.gen_beam_Dy   = beam_p4.Rapidity() - genJet_p4.Rapidity()
-        event.gen_beam_Deta = beam_p4.PseudoRapidity() - genJet_p4.PseudoRapidity()
-        event.gen_beam_dR   = sqrt( event.gen_beam_Dy**2 + event.gen_beam_dPhi**2 )
-        event.gen_beam_gamma= atan2( event.gen_beam_Dy, event.gen_beam_dPhi )
+        genJet_p4_VV_rapidity = genJet_p4_VV.Rapidity()
 
-        #genJet_p4.Print()
-        #print
+        event.gen_beam_VV_phi   = beam_p4_VV.Phi()
+        event.gen_beam_VV_theta = beam_p4_VV.Theta()
+        event.gen_beam_VV_Dy    = beam_p4_VV.Rapidity() - genJet_p4_VV_rapidity
+
         for p in cands_list:
-            p['phirel'] = deltaPhi(event.genJet_phi, p['phi'], returnAbs=False)
-            p['etarel'] = p['eta'] - event.genJet_eta
-            p['p4'] = makeP4(gen_particles[p['index']])
-            p['p4'].Boost( -boost_VV )
-            p['Dy'] = p['p4'].Rapidity() - genJet_p4.Rapidity()
-            p['Deta'] = p['p4'].PseudoRapidity() - genJet_p4.PseudoRapidity()
-            p['Dphi'] = deltaPhi(genJet_p4.Phi(), p['p4'].Phi(), returnAbs=False)
-            p['dR']    = sqrt( p['Dy']**2 + p['Dphi']**2)
-            p['gamma'] = atan2( p['Dy'], p['Dphi'] )
-            p['Dgamma']= deltaPhi(event.gen_beam_gamma, p['gamma'], returnAbs=False)
+            # lab frame
+            p_p4 = makeP4(gen_particles[p['index']]) 
+            p['Dphi_lab'] = deltaPhi(event.genJet_phi, p['phi'], returnAbs=False)
+            p['Deta_lab'] = p['eta'] - event.genJet_eta 
 
-            #p['p4'].Print()
-            #print "R", p['p4'].Rapidity(), "Eta", p['p4'].PseudoRapidity(), "M", p['p4'].M() 
-        #print
+            p['Dy_lab']   = p_p4.Rapidity() - event.genJet_rapidity 
+            p['pt_lab']   = p_p4.Pt()
+            p['p_lab']    = p_p4.P()
+            p['dR_lab']   = sqrt( p['Dy_lab']**2 + p['Dphi_lab']**2)
+            p['gamma_lab']= atan2( p['Dy_lab'], p['Dphi_lab'] )
+
+            # VV frame
+            p_p4.Boost( -boost_VV )
+            p_p4.RotateZ( rot_phi )
+            p_p4.RotateY( rot_theta )
+            p_p4.RotateZ( rot_phi_beam )
+            p['p_VV']  = p_p4.P()
+            p['pInJetDir_VV']= p_p4.Vect().Dot(genJet_p4_VV.Vect().Unit())
+            p['Dy_VV'] = 0.5*log( (p_p4.E()+p['pInJetDir_VV'])/(p_p4.E()-p['pInJetDir_VV'])) - genJet_p4_VV_rapidity
+
+            p['Theta_VV'] = genJet_p4_VV.Angle(p_p4.Vect())
+            p['phi_VV']      = p_p4.Phi()
 
         for cat in categories:
             for cand in filter( cat['gen_func'], cands_list ):
@@ -791,33 +788,92 @@ def filler( event ):
         delphesJet_dict       = {'pt':event.delphesJet_pt, 'eta':event.delphesJet_eta, 'phi':event.delphesJet_phi, 'mass':event.delphesJet_mass, 'eflowCandsVec':eflowCandsVec}
         delphesJet_dict['p4'] = ROOT.TLorentzVector()
         delphesJet_dict['p4'].SetPtEtaPhiM(event.delphesJet_pt, event.delphesJet_eta, event.delphesJet_phi, event.delphesJet_mass)
+        event.delphesJet_rapidity  = delphesJet_dict['p4'].Rapidity()
 
         boost_VV =  (lepV_parton['p4'] + delphesJet_dict['p4']).BoostVector()
-        beam_p4 = ROOT.TLorentzVector()
-        beam_p4.SetPxPyPzE(0,0,6500,6500)
-        beam_p4  .Boost( -boost_VV )
+        # boost jet into VV rest system
         delphesJet_p4_VV = copy.deepcopy(delphesJet_dict['p4'])
         delphesJet_p4_VV.Boost( -boost_VV )
+        # make jet in VV system also point into z direction
+        rot_phi = -delphesJet_p4_VV.Phi()
+        delphesJet_p4_VV.RotateZ( rot_phi )
+        rot_theta = -delphesJet_p4_VV.Theta()
+        delphesJet_p4_VV.RotateY( rot_theta )
 
-        event.delphes_beam_dPhi = deltaPhi( delphesJet_p4_VV.Phi(), beam_p4.Phi(), returnAbs=False)
-        event.delphes_beam_Dy   = beam_p4.Rapidity() - delphesJet_p4_VV.Rapidity()
-        event.delphes_beam_Deta = beam_p4.PseudoRapidity() - delphesJet_p4_VV.PseudoRapidity()
-        event.delphes_beam_dR   = sqrt( event.delphes_beam_Dy**2 + event.delphes_beam_dPhi**2 )
-        event.delphes_beam_gamma= atan2( event.delphes_beam_Dy, event.delphes_beam_dPhi )
+        # same with beam
+        beam_p4_VV = ROOT.TLorentzVector()
+        beam_p4_VV.SetPxPyPzE(0,0,6500,6500)
+        beam_p4_VV  .Boost( -boost_VV )
+        beam_p4_VV.RotateZ( rot_phi )
+        beam_p4_VV.RotateY( rot_theta )
+        rot_phi_beam = -beam_p4_VV.Phi()
+        beam_p4_VV.RotateZ( rot_phi_beam )
+
+        #print "beam"
+        #beam_p4_VV.Print()
+        #print "jet"
+        #delphesJet_p4_VV.Print()
+
+        # rapidity in the jet direction! 
+        delphesJet_p4_VV_rapidity = delphesJet_p4_VV.Rapidity()
+        #delphesJet_p4_VV_rapidity = 0.5*log((delphesJet_p4_VV.E()+delphesJet_p4_VV.P())/(delphesJet_p4_VV.E()-delphesJet_p4_VV.P()))
+        #print "jet rapidity", delphesJet_p4_VV_rapidity, delphesJet_p4_VV.Rapidity() 
+
+        #print "Jet"
+        #delphesJet_p4_VV.Print()
+        #print delphesJet_p4_VV.Phi()
+        #assert False, ""
+
+        #print "beam"
+        #beam_p4_VV.Print()
+
+        event.delphes_beam_VV_phi   = beam_p4_VV.Phi()
+        event.delphes_beam_VV_theta = beam_p4_VV.Theta() 
+        event.delphes_beam_VV_Dy    = beam_p4_VV.Rapidity() - delphesJet_p4_VV_rapidity 
+        #event.delphes_beam_VV_Deta= beam_p4_VV.PseudoRapidity() - delphesJet_p4_VV.PseudoRapidity()
+        #event.delphes_beam_VV_dR    = sqrt( event.delphes_beam_VV_Dy**2 + event.delphes_beam_VV_phi**2 )
+        #event.delphes_beam_VV_gamma = atan2( event.delphes_beam_VV_Dy, event.delphes_beam_VV_phi )
+
+        #print event.delphes_beam_VV_phi, event.delphes_beam_VV_Dy ,event.delphes_beam_VV_theta , event.delphes_beam_VV_dR, event.delphes_beam_VV_gamma
+
+        #delphesJet_p4_VV.Print()
 
         for i_p, p in enumerate(delphesJet_constituents):
-            #p.update( truth_weight_dict ) # store truth information per particle 
-            p['phirel'] = deltaPhi(p['phi'], delphesJet.phi(), returnAbs=False)
-            p['etarel'] = p['eta'] - delphesJet.eta() 
             if not p.has_key('charge'):p['charge']=0
+
+            # lab frame
             p_p4 = eflowCandsVec[i_p]
+            p['Dphi_lab'] = deltaPhi(delphesJet.phi(), p['phi'], returnAbs=False)
+            p['Deta_lab'] = p['eta'] - delphesJet.eta()
+    
+            p['Dy_lab']   = p_p4.Rapidity() - delphesJet_dict['p4'].Rapidity()
+            p['pt_lab']   = p_p4.Pt()
+            p['p_lab']    = p_p4.P()
+            p['dR_lab']   = sqrt( p['Dy_lab']**2 + p['Dphi_lab']**2)
+            p['gamma_lab']= atan2( p['Dy_lab'], p['Dphi_lab'] )
+
+            # VV frame
             p_p4.Boost( -boost_VV )
-            p['Dy'] = p_p4.Rapidity() - delphesJet_p4_VV.Rapidity()
-            p['Deta'] = p_p4.PseudoRapidity() - delphesJet_p4_VV.PseudoRapidity()
-            p['Dphi'] = deltaPhi(delphesJet_p4_VV.Phi(), p_p4.Phi(), returnAbs=False)
-            p['dR']    = sqrt( p['Dy']**2 + p['Dphi']**2)
-            p['gamma'] = atan2( p['Dy'], p['Dphi'] )
-            p['Dgamma']= deltaPhi(event.delphes_beam_gamma, p['gamma'], returnAbs=False)
+            p_p4.RotateZ( rot_phi )
+            p_p4.RotateY( rot_theta )
+            p_p4.RotateZ( rot_phi_beam )
+            #print ("DelphesJet")
+            #delphesJet_p4_VV.Print()
+            #print ("particle")
+            #p_p4.Print()
+            p['p_VV']  = p_p4.P()
+            p['pInJetDir_VV']= p_p4.Vect().Dot(delphesJet_p4_VV.Vect().Unit())
+            p['Dy_VV'] = 0.5*log( (p_p4.E()+p['pInJetDir_VV'])/(p_p4.E()-p['pInJetDir_VV'])) - delphesJet_p4_VV_rapidity 
+            #print p_p4.Rapidity(), p_p4.Rapidity() - delphesJet_p4_VV_rapidity, p['Dy_VV']
+
+            #p['Deta'] = p_p4.PseudoRapidity() - delphesJet_p4_VV.PseudoRapidity()
+            p['Theta_VV'] = delphesJet_p4_VV.Angle(p_p4.Vect())
+            #print p['Theta_VV'],  p_p4.Theta()
+            p['phi_VV']      = p_p4.Phi()
+            #p['dR']    = sqrt( p['Dy']**2 + p['phi']**2)
+            #p['gamma'] = atan2( p['Dy'], p['Dphi'] )
+            #p['Dgamma']= deltaPhi(event.delphes_beam_gamma, p['gamma'], returnAbs=False)
+
         for cat in categories:
             for cand in filter( cat['eflow_func'], delphesJet_constituents):
                 cand['type'] = cat['type']
