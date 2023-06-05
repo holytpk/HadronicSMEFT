@@ -263,7 +263,10 @@ variables += ['genJet_SDmass/F',
               'genJet_SDsubjet1_eta/F', 'genJet_SDsubjet1_deltaEta/F', 'genJet_SDsubjet1_phi/F', 'genJet_SDsubjet1_deltaPhi/F', 'genJet_SDsubjet1_deltaR/F', 'genJet_SDsubjet1_mass/F',
               'genJet_tau1/F', 'genJet_tau2/F', 'genJet_tau3/F', 'genJet_tau4/F', 'genJet_tau21/F', 'genJet_tau32/F']
 
-variables += ["genJet_VV_p/F"]
+variables += ["genJet_VV_y/F", "genJet_VV_p/F",
+              "genJet_q1_VV_p/F", "genJet_q1_VV_Dy/F", "genJet_q1_VV_Theta/F", "genJet_q1_VV_Phi/F",
+              "genJet_q2_VV_p/F", "genJet_q2_VV_Dy/F", "genJet_q2_VV_Theta/F", "genJet_q2_VV_Phi/F",
+]
 
 for i_ecf, (name, _) in enumerate( ecfs ):
     variables.append( "genJet_%s/F"%name )
@@ -280,7 +283,9 @@ if args.delphesEra is not None:
                   'delphesJet_tau1/F', 'delphesJet_tau2/F', 'delphesJet_tau3/F', 'delphesJet_tau4/F', 'delphesJet_tau21/F', 'delphesJet_tau32/F']
 
     variables += ["delphes_beam_VV_phi/F", "delphes_beam_VV_theta/F", "delphes_beam_VV_Dy/F"]
-    variables += ["delphesJet_VV_p/F"]
+    variables += ["delphesJet_VV_y/F", "delphesJet_VV_p/F",
+                  "delphesJet_q1_VV_p/F", "delphesJet_q1_VV_Dy/F", "delphesJet_q1_VV_Theta/F", "delphesJet_q1_VV_Phi/F",
+                  "delphesJet_q2_VV_p/F", "delphesJet_q2_VV_Dy/F", "delphesJet_q2_VV_Theta/F", "delphesJet_q2_VV_Phi/F",]
 
 # enumeration according to PF type: https://github.com/cms-sw/cmssw/blob/master/DataFormats/ParticleFlowCandidate/interface/PFCandidate.h#L44-L52
 categories = [
@@ -610,7 +615,8 @@ def filler( event ):
     event.parton_hadV_angle_theta = q1_p4.Angle(hadV_p4.Vect())
     #print event.parton_hadV_Theta, event.parton_hadV_phi, event.parton_hadV_theta
 
-    # genJet 
+
+    # genJet level 
     matched_genJet = next( (j for j in genJets if deltaR( {'eta':j.eta(),'phi':j.phi()}, {'eta':hadV_parton['eta'], 'phi':hadV_parton['phi']}) < 0.6), None)
 
     if matched_genJet:
@@ -656,13 +662,32 @@ def filler( event ):
         rot_phi_beam = -beam_p4_VV.Phi()
         beam_p4_VV.RotateZ( rot_phi_beam )
 
-        genJet_p4_VV_y     = genJet_p4_VV.Rapidity()
+        event.genJet_VV_y  = genJet_p4_VV.Rapidity() #NEW
         event.genJet_VV_p  = genJet_p4_VV.P() #NEW
 
         event.gen_beam_VV_phi   = beam_p4_VV.Phi()
         event.gen_beam_VV_theta = beam_p4_VV.Theta()
-        event.gen_beam_VV_Dy    = beam_p4_VV.Rapidity() - genJet_p4_VV_y
+        event.gen_beam_VV_Dy    = beam_p4_VV.Rapidity() - event.genJet_VV_y
 
+        # q1/q2 partons in genJet VV restframe
+        q1_p4   = copy.deepcopy( hadV_parton['q1_p4'] )
+        q2_p4   = copy.deepcopy( hadV_parton['q2_p4'] )
+        for qn, q in [ ("q1", q1_p4), ("q2", q2_p4)]:
+            q.Boost( -boost_VV )
+            q.RotateZ( rot_phi )
+            q.RotateY( rot_theta )
+            q.RotateZ( rot_phi_beam )
+            setattr( event, 'genJet_%s_VV_p'%qn, q.P()) 
+            q_pInJetDir_VV = q.Vect().Dot(genJet_p4_VV.Vect().Unit())
+            try:
+                q_VV_y = 0.5*log( (q.E()+q_pInJetDir_VV)/(q.E()-q_pInJetDir_VV)) - event.genJet_VV_y
+            except (ValueError, ZeroDivisionError), e:
+                q_VV_y = float('nan')
+            setattr( event, 'genJet_%s_VV_Dy'%qn, q_VV_y )
+            setattr( event, 'genJet_%s_VV_Theta'%qn, genJet_p4_VV.Angle(q.Vect() ) )
+            setattr( event, 'genJet_%s_VV_Phi'%qn, q.Phi() )
+
+        # Now all the jet particles
         for p in cands_list:
             # lab frame
             p_p4 = makeP4(gen_particles[p['index']]) 
@@ -683,7 +708,7 @@ def filler( event ):
             p['p_VV']  = p_p4.P()
             p['pInJetDir_VV']= p_p4.Vect().Dot(genJet_p4_VV.Vect().Unit())
             try:
-                p['Dy_VV'] = 0.5*log( (p_p4.E()+p['pInJetDir_VV'])/(p_p4.E()-p['pInJetDir_VV'])) - genJet_p4_VV_y
+                p['Dy_VV'] = 0.5*log( (p_p4.E()+p['pInJetDir_VV'])/(p_p4.E()-p['pInJetDir_VV'])) - event.genJet_VV_y
             except (ValueError, ZeroDivisionError), e:
                 p['Dy_VV'] = None
 
@@ -849,10 +874,10 @@ def filler( event ):
         #delphesJet_p4_VV.Print()
 
         # rapidity in the jet direction! 
-        delphesJet_p4_VV_y    = delphesJet_p4_VV.Rapidity()
+        event.delphesJet_VV_y = delphesJet_p4_VV.Rapidity() #NEW
         event.delphesJet_VV_p = delphesJet_p4_VV.P() #NEW
-        #delphesJet_p4_VV_y = 0.5*log((delphesJet_p4_VV.E()+delphesJet_p4_VV.P())/(delphesJet_p4_VV.E()-delphesJet_p4_VV.P()))
-        #print "jet rapidity", delphesJet_p4_VV_y, delphesJet_p4_VV.Rapidity() 
+        #delphesJet_VV_y = 0.5*log((delphesJet_p4_VV.E()+delphesJet_p4_VV.P())/(delphesJet_p4_VV.E()-delphesJet_p4_VV.P()))
+        #print "jet rapidity", delphesJet_VV_y, delphesJet_p4_VV.Rapidity() 
 
         #print "Jet"
         #delphesJet_p4_VV.Print()
@@ -864,7 +889,7 @@ def filler( event ):
 
         event.delphes_beam_VV_phi   = beam_p4_VV.Phi()
         event.delphes_beam_VV_theta = beam_p4_VV.Theta() 
-        event.delphes_beam_VV_Dy    = beam_p4_VV.Rapidity() - delphesJet_p4_VV_y 
+        event.delphes_beam_VV_Dy    = beam_p4_VV.Rapidity() - event.delphesJet_VV_y 
         #event.delphes_beam_VV_Deta= beam_p4_VV.PseudoRapidity() - delphesJet_p4_VV.PseudoRapidity()
         #event.delphes_beam_VV_dR    = sqrt( event.delphes_beam_VV_Dy**2 + event.delphes_beam_VV_phi**2 )
         #event.delphes_beam_VV_gamma = atan2( event.delphes_beam_VV_Dy, event.delphes_beam_VV_phi )
@@ -873,6 +898,25 @@ def filler( event ):
 
         #delphesJet_p4_VV.Print()
 
+        # q1/q2 partons in delphesJet VV restframe
+        q1_p4   = copy.deepcopy( hadV_parton['q1_p4'] )
+        q2_p4   = copy.deepcopy( hadV_parton['q2_p4'] )
+        for qn, q in [ ("q1", q1_p4), ("q2", q2_p4)]:
+            q.Boost( -boost_VV )
+            q.RotateZ( rot_phi )
+            q.RotateY( rot_theta )
+            q.RotateZ( rot_phi_beam )
+            setattr( event, 'delphesJet_%s_VV_p'%qn, q.P()) 
+            q_pInJetDir_VV = q.Vect().Dot(delphesJet_p4_VV.Vect().Unit())
+            try:
+                q_VV_y = 0.5*log( (q.E()+q_pInJetDir_VV)/(q.E()-q_pInJetDir_VV)) - event.delphesJet_VV_y
+            except (ValueError, ZeroDivisionError), e:
+                q_VV_y = float('nan')
+            setattr( event, 'delphesJet_%s_VV_Dy'%qn, q_VV_y )
+            setattr( event, 'delphesJet_%s_VV_Theta'%qn, delphesJet_p4_VV.Angle(q.Vect() ) )
+            setattr( event, 'delphesJet_%s_VV_Phi'%qn, q.Phi() )
+
+        # Now all the jet particles
         for i_p, p in enumerate(delphesJet_constituents):
             if not p.has_key('charge'):p['charge']=0
 
@@ -899,10 +943,10 @@ def filler( event ):
             p['p_VV']  = p_p4.P()
             p['pInJetDir_VV']= p_p4.Vect().Dot(delphesJet_p4_VV.Vect().Unit())
             try:
-                p['Dy_VV'] = 0.5*log( (p_p4.E()+p['pInJetDir_VV'])/(p_p4.E()-p['pInJetDir_VV'])) - delphesJet_p4_VV_y 
+                p['Dy_VV'] = 0.5*log( (p_p4.E()+p['pInJetDir_VV'])/(p_p4.E()-p['pInJetDir_VV'])) - event.delphesJet_VV_y 
             except (ValueError, ZeroDivisionError), e:
                 p['Dy_VV'] = None 
-            #print p_p4.Rapidity(), p_p4.Rapidity() - delphesJet_p4_VV_y, p['Dy_VV']
+            #print p_p4.Rapidity(), p_p4.Rapidity() - delphesJet_VV_y, p['Dy_VV']
 
             #p['Deta'] = p_p4.PseudoRapidity() - delphesJet_p4_VV.PseudoRapidity()
             p['Theta_VV'] = delphesJet_p4_VV.Angle(p_p4.Vect())
