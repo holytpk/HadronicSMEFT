@@ -6,7 +6,7 @@ cmsenv
 git cms-init
 git clone https://github.com/HephyAnalysisSW/HadronicSMEFT
 git clone --branch UL https://github.com/HephyAnalysisSW/Analysis
-git clone https://github.com/HephyAnalysisSW/Samples
+#git clone https://github.com/HephyAnalysisSW/Samples
 git clone https://github.com/HephyAnalysisSW/RootTools
 git clone https://github.com/HephyAnalysisSW/NanoAODJMARTools.git PhysicsTools/NanoAODJMARTools
 cp $CMSSW_BASE/src/PhysicsTools/NanoAODJMARTools/xmlfiles/* $CMSSW_BASE/config/toolbox/$SCRAM_ARCH/tools/selected/
