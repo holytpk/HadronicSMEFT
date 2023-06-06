@@ -20,8 +20,6 @@ from HadronicSMEFT.Tools.user import cache_directory, gridpack_directory
 dbFile = os.path.join( cache_directory, 'sample_cache', 'genVV_v3.db')
 overwrite = False
 
-# for flavor analysis 
-
 gridpack_directory = "/eos/vbc/group/cms/robert.schoefbeck/gridpacks/ParticleNet/"
 
 WZto1L1Nu_HT300 = FWLiteSample.fromDAS("WZto1L1Nu_HT300", "/SMEFTNet_v3_WZto1L1Nu_HT300/schoef-SMEFTNet_v3_WZto1L1Nu_HT300-c02f0719055f37601ffced1868606ecc/USER", dbFile=dbFile, instance="phys03", prefix="root://eos.grid.vbc.ac.at/", overwrite=overwrite)
