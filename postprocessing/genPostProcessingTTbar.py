@@ -269,6 +269,7 @@ variables += ["parton_cosThetaPlus_n/F", "parton_cosThetaMinus_n/F", "parton_cos
               "parton_xi_nr_plus/F", "parton_xi_nr_minus/F", "parton_xi_rk_plus/F", "parton_xi_rk_minus/F", "parton_xi_nk_plus/F", "parton_xi_nk_minus/F", 
               "parton_cos_phi/F", "parton_cos_phi_lab/F", "parton_abs_delta_phi_ll_lab/F",
              ] 
+
 if args.delphesEra is not None:
     variables += ["delphesJet_dR_matched_hadTop_parton/F", "delphesJet_dR_lepTop_parton/F", "delphesJet_dR_hadTop_q1/F", "delphesJet_dR_hadTop_q2/F", 
                   "delphesJet_dR_hadTop_W/F",              "delphesJet_dR_hadTop_b/F", "delphesJet_dR_hadTop_maxq1q2b/F"]
@@ -542,9 +543,6 @@ def filler( event ):
     hadTop_partons.sort( key=lambda t:-t['pt'] )
     lepTop_partons.sort( key=lambda t:-t['pt'] )
     lepTop_parton = lepTop_partons[0] if len(lepTop_partons)>0 else None
-
-    #print "had", len( hadTop_partons), hadTop_partons
-    #print "lep", len( lepTop_partons), lepTop_partons
 
     # make AK8 jets from Delphes EFlow
     if args.delphesEra is not None:

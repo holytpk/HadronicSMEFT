@@ -125,7 +125,6 @@ for _, args_ in ecfs:
 variables = []
 
 # Load reweight pickle file if supposed to keep weights. 
-
 if args.addReweights:
     weightInfo = WeightInfo( sample.reweight_pkl )
     weightInfo.set_order( args.interpolationOrder ) 
@@ -272,7 +271,7 @@ for i_ecf, (name, _) in enumerate( ecfs ):
     variables.append( "genJet_%s/F"%name )
 
 variables += ["dR_genJet_q1/F", "dR_genJet_q2/F", "dR_genJet_maxq1q2/F"]
-variables += ["gen_beam_VV_phi/F", "gen_beam_VV_theta/F", "gen_beam_Dy/F"]
+variables += ["gen_beam_VV_phi/F", "gen_beam_VV_theta/F", "gen_beam_VV_Dy/F"]
 
 if args.delphesEra is not None:
     variables += ["delphesJet_dR_matched_hadV_parton/F", "delphesJet_dR_lepV_parton/F", "delphesJet_dR_hadV_q1/F", "delphesJet_dR_hadV_q2/F", "delphesJet_dR_hadV_maxq1q2/F"] 
