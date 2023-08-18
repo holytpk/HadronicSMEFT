@@ -278,6 +278,7 @@ if args.delphesEra is not None:
                   'delphesJet_SDsubjet0_eta/F', 'delphesJet_SDsubjet0_deltaEta/F', 'delphesJet_SDsubjet0_phi/F', 'delphesJet_SDsubjet0_deltaPhi/F', 'delphesJet_SDsubjet0_deltaR/F', 'delphesJet_SDsubjet0_mass/F', 
                   'delphesJet_SDsubjet1_eta/F', 'delphesJet_SDsubjet1_deltaEta/F', 'delphesJet_SDsubjet1_phi/F', 'delphesJet_SDsubjet1_deltaPhi/F', 'delphesJet_SDsubjet1_deltaR/F', 'delphesJet_SDsubjet1_mass/F', 
                   'delphesJet_tau1/F', 'delphesJet_tau2/F', 'delphesJet_tau3/F', 'delphesJet_tau4/F', 'delphesJet_tau21/F', 'delphesJet_tau32/F']
+    variables += ["delphesJet_lep_p/F", "delphesJet_lep_cosTheta_n/F", "delphesJet_lep_cosTheta_r/F", "delphesJet_lep_cosTheta_k/F", "delphesJet_lep_cosTheta_r_star/F", "delphesJet_lep_cosTheta_k_star/F",]
 
 # enumeration according to PF type: https://github.com/cms-sw/cmssw/blob/master/DataFormats/ParticleFlowCandidate/interface/PFCandidate.h#L44-L52
 categories = [
@@ -292,7 +293,7 @@ if args.delphesEra is not None:
     for i_ecf, (name, _) in enumerate( ecfs ):
         variables.append( "delphesJet_%s/F"%name )
 
-    cand_vars        =  "pt/F,etarel/F,phirel/F,eta/F,phi/F,pdgId/I,charge/I,type/I"
+    cand_vars        =  "pt/F,etarel/F,phirel/F,eta/F,phi/F,pdgId/I,charge/I,type/I,tt_p/F"
     spin_correlation_vars = ",cos_phi_lab/F,abs_delta_phi_ll_lab/F,cosTheta_n/F,cosTheta_r/F,cosTheta_k/F,cosTheta_r_star/F,cosTheta_k_star/F,xi_nn/F,xi_rr/F,xi_kk/F,xi_nr_plus/F,xi_nr_minus/F,xi_rk_plus/F,xi_rk_minus/F,xi_nk_plus/F,xi_nk_minus/F,cos_phi/F"
     cand_vars            +=  spin_correlation_vars 
 
@@ -923,13 +924,14 @@ def filler( event ):
         k_a_star = sign_star*k_hat
         r_a_star = sign_star*sign_*r_hat
 
+        event.delphesJet_lep_p = p4_lep.Vect().Mag()
         lep_unit       = p4_lep.Vect().Unit() 
-        lep_cosTheta_n = n_a.Dot(lep_unit)
-        lep_cosTheta_r = r_a.Dot(lep_unit)
-        lep_cosTheta_k = k_a.Dot(lep_unit)
+        event.delphesJet_lep_cosTheta_n = n_a.Dot(lep_unit)
+        event.delphesJet_lep_cosTheta_r = r_a.Dot(lep_unit)
+        event.delphesJet_lep_cosTheta_k = k_a.Dot(lep_unit)
 
-        lep_cosTheta_r_star = r_a_star.Dot(lep_unit)
-        lep_cosTheta_k_star = k_a_star.Dot(lep_unit)
+        event.delphesJet_lep_cosTheta_r_star = r_a_star.Dot(lep_unit)
+        event.delphesJet_lep_cosTheta_k_star = k_a_star.Dot(lep_unit)
 
         jet_boost  = p4_hadTop.BoostVector() 
         lep_lab_p4 = makeP4(lepTop_parton['lep'].p4())
@@ -965,6 +967,7 @@ def filler( event ):
                 cand.Boost( -jet_boost )
 
                 cand_unit = cand.Vect().Unit()
+                c["tt_p"] = cand.Vect().Mag()
                 #print "n_a"
                 #n_a.Print()
                 #print "r_a"
@@ -973,7 +976,7 @@ def filler( event ):
                 #k_a.Print()
                 # the sign here is the RELATIVE sign between +/- charge in Bernreuther who always defines the - one with a negative sign. 
                 # the *absolute* sign is determined with sign_charge above (understand sign_charge=-1 as flipping the a/b defintion in Bernreuther)
-                c["cosTheta_n"] = -n_a.Dot(cand_unit) # the sign here is the RELATIVE sign between +/- charge in Bernreuther who always defines the - one with a negative sign. 
+                c["cosTheta_n"] = -n_a.Dot(cand_unit) # Our n_a, ... have the correct sign for the lepton. For the candidate, therefore, they have an additional -1. 
                 c["cosTheta_r"] = -r_a.Dot(cand_unit)
                 c["cosTheta_k"] = -k_a.Dot(cand_unit)
 
@@ -981,16 +984,16 @@ def filler( event ):
                 c["cosTheta_k_star"] = -k_a_star.Dot(cand_unit)
 
                 # TOP-18-006 table 1 http://cds.cern.ch/record/2649926/files/TOP-18-006-pas.pdf
-                c["xi_nn"] = c["cosTheta_n"]*lep_cosTheta_n 
-                c["xi_rr"] = c["cosTheta_r"]*lep_cosTheta_r 
-                c["xi_kk"] = c["cosTheta_k"]*lep_cosTheta_k
+                c["xi_nn"] = c["cosTheta_n"]*event.delphesJet_lep_cosTheta_n 
+                c["xi_rr"] = c["cosTheta_r"]*event.delphesJet_lep_cosTheta_r 
+                c["xi_kk"] = c["cosTheta_k"]*event.delphesJet_lep_cosTheta_k
 
-                c["xi_nr_plus"]  = c["cosTheta_n"]*lep_cosTheta_r + c["cosTheta_r"]*lep_cosTheta_n
-                c["xi_nr_minus"] = c["cosTheta_n"]*lep_cosTheta_r - c["cosTheta_r"]*lep_cosTheta_n
-                c["xi_rk_plus"]  = c["cosTheta_r"]*lep_cosTheta_k + c["cosTheta_k"]*lep_cosTheta_r
-                c["xi_rk_minus"] = c["cosTheta_r"]*lep_cosTheta_k - c["cosTheta_k"]*lep_cosTheta_r
-                c["xi_nk_plus"]  = c["cosTheta_n"]*lep_cosTheta_k + c["cosTheta_k"]*lep_cosTheta_n
-                c["xi_nk_minus"] = c["cosTheta_n"]*lep_cosTheta_k - c["cosTheta_k"]*lep_cosTheta_n
+                c["xi_nr_plus"]  = c["cosTheta_n"]*event.delphesJet_lep_cosTheta_r + c["cosTheta_r"]*event.delphesJet_lep_cosTheta_n
+                c["xi_nr_minus"] = c["cosTheta_n"]*event.delphesJet_lep_cosTheta_r - c["cosTheta_r"]*event.delphesJet_lep_cosTheta_n
+                c["xi_rk_plus"]  = c["cosTheta_r"]*event.delphesJet_lep_cosTheta_k + c["cosTheta_k"]*event.delphesJet_lep_cosTheta_r
+                c["xi_rk_minus"] = c["cosTheta_r"]*event.delphesJet_lep_cosTheta_k - c["cosTheta_k"]*event.delphesJet_lep_cosTheta_r
+                c["xi_nk_plus"]  = c["cosTheta_n"]*event.delphesJet_lep_cosTheta_k + c["cosTheta_k"]*event.delphesJet_lep_cosTheta_n
+                c["xi_nk_minus"] = c["cosTheta_n"]*event.delphesJet_lep_cosTheta_k - c["cosTheta_k"]*event.delphesJet_lep_cosTheta_n
 
                 c["cos_phi"]     = cand_unit.Dot(lep_unit)
 

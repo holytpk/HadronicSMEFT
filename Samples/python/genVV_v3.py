@@ -28,8 +28,12 @@ WZto1L1Nu_HT300.reweight_pkl = "/eos/vbc/group/cms/robert.schoefbeck/gridpacks/P
 WZto2L_HT300 = FWLiteSample.fromDAS("WZto2L_HT300", "/SMEFTNet_v3_WZto2L_HT300/schoef-SMEFTNet_v3_WZto2L_HT300-30e3aa1ed71123ab50b02a1bc9720d07/USER", dbFile=dbFile, instance="phys03", prefix="root://eos.grid.vbc.ac.at/", overwrite=overwrite)
 WZto2L_HT300.reweight_pkl = "/eos/vbc/group/cms/robert.schoefbeck/gridpacks/ParticleNet/WZto2LNoRef_HT300_reweight_card.pkl"
 
+
 WZto2L_HT300_Ref = FWLiteSample.fromDAS("WZto2L_HT300_Ref", "/SMEFTNet_v4_WZto2L_HT300/schoef-SMEFTNet_v4_WZto2L_HT300-b975dbcbae79b8cb5652f82f2f9f15c4/USER", dbFile=dbFile, instance="phys03", prefix="root://eos.grid.vbc.ac.at/", overwrite=overwrite)
 WZto2L_HT300_Ref.reweight_pkl = "/eos/vbc/group/cms/robert.schoefbeck/gridpacks/ParticleNet/WZto2L_HT300_reweight_card.pkl"
+
+WZto2L_HT300_Ref_ext = FWLiteSample.fromDAS("WZto2L_HT300_Ref_ext", "/SMEFTNet_v4_ext_WZto2L_HT300/schoef-SMEFTNet_v4_ext_WZto2L_HT300-b975dbcbae79b8cb5652f82f2f9f15c4/USER", dbFile=dbFile, instance="phys03", prefix="root://eos.grid.vbc.ac.at/", overwrite=overwrite)
+WZto2L_HT300_Ref_ext.reweight_pkl = "/eos/vbc/group/cms/robert.schoefbeck/gridpacks/ParticleNet/WZto2L_HT300_reweight_card.pkl"
 
 WhadZlepJJEWK = FWLiteSample.fromDAS("WhadZlepJJEWK", "/SMEFTNet_v3_WhadZlepJJ/schoef-SMEFTNet_v3_WhadZlepJJ-5ce880e6626b2530231b9a4b214156df/USER", dbFile=dbFile, instance="phys03", prefix="root://eos.grid.vbc.ac.at/", overwrite=overwrite)
 WhadZlepJJEWK.reweight_pkl = "/eos/vbc/group/cms/robert.schoefbeck/gridpacks/ParticleNet/WhadZlepJJEWKNoRef_reweight_card.pkl"

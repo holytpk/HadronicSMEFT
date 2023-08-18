@@ -267,6 +267,8 @@ variables += ["genJet_VV_y/F", "genJet_VV_p/F",
               "genJet_q2_VV_p/F", "genJet_q2_VV_Dy/F", "genJet_q2_VV_Theta/F", "genJet_q2_VV_Phi/F",
 ]
 
+variables += ["isVBS/I", "vbsJet1_VV_Phi/F", "vbsJet1_VV_Theta/F", "vbsJet1_VV_Dy/F", "vbsJet1_VV_dPhi_q1/F"]
+
 for i_ecf, (name, _) in enumerate( ecfs ):
     variables.append( "genJet_%s/F"%name )
 
@@ -340,9 +342,11 @@ products = {
 
 if args.miniAOD:
     products['ak8GenJets'] = {'type':'vector<reco::GenJet>', 'label':("slimmedGenJetsAK8")}
+    products['ak4GenJets'] = {'type':'vector<reco::GenJet>', 'label':("slimmedGenJets")}
     products['gp']         = {'type':'vector<reco::GenParticle>', 'label':("prunedGenParticles")}
 else:
     products['ak8GenJets'] = {'type':'vector<reco::GenJet>', 'label':("ak8GenJetsNoNu")}
+    products['ak4GenJets'] = {'type':'vector<reco::GenJet>', 'label':("ak4GenJetsNoNu")}
     products['gp']         = {'type':'vector<reco::GenParticle>', 'label':("genParticles")}
 
 # relocate original
@@ -449,7 +453,10 @@ def filler( event ):
 
     # genJets
     ak8GenJets = fwliteReader.products['ak8GenJets']
-    genJets    = filter( lambda j: genJetId(j, miniAOD=args.miniAOD), ak8GenJets )
+    ak8GenJets = filter( lambda j: genJetId(j, miniAOD=args.miniAOD), ak8GenJets )
+
+    ak4GenJets = fwliteReader.products['ak4GenJets']
+    ak4GenJets = filter( lambda j: genJetId(j, miniAOD=args.miniAOD), ak4GenJets )
 
     # All gen particles
     gp        = fwliteReader.products['gp']
@@ -481,7 +488,6 @@ def filler( event ):
     W_partons = filter( lambda p:abs(p.pdgId())==24 and search.isFirst(p), gp)
     Z_partons = filter( lambda p:abs(p.pdgId())==23 and search.isFirst(p), gp)
 #    b_partons = filter( lambda p:abs(p.pdgId())==5 and search.isFirst(p) and abs(p.mother(0).pdgId())==6, gp)
-
 
     # require at least two W close to the resonance
     if len(Z_partons)<1 or len(W_partons)<1: return
@@ -614,9 +620,24 @@ def filler( event ):
     event.parton_hadV_angle_theta = q1_p4.Angle(hadV_p4.Vect())
     #print event.parton_hadV_Theta, event.parton_hadV_phi, event.parton_hadV_theta
 
-
     # genJet level 
-    matched_genJet = next( (j for j in genJets if deltaR( {'eta':j.eta(),'phi':j.phi()}, {'eta':hadV_parton['eta'], 'phi':hadV_parton['phi']}) < 0.6), None)
+    matched_genJet = next( (j for j in ak8GenJets if deltaR( {'eta':j.eta(),'phi':j.phi()}, {'eta':hadV_parton['eta'], 'phi':hadV_parton['phi']}) < 0.6), None)
+    ak4GenJets     = [ j for j in ak4GenJets if ( matched_genJet is None or deltaR( {'eta':j.eta(),'phi':j.phi()}, {'eta':matched_genJet.eta(), 'phi':matched_genJet.phi()}) > 0.6) ]
+
+    # filter VBS jets like in SMP-21-001
+    event.isVBS = False
+    ak4GenJets  = filter( lambda j: j.pt()>30 and abs(j.eta())<4.7, ak4GenJets )
+    #if matched_genJet:
+    #    print "matched", matched_genJet.pt(), matched_genJet.eta(), matched_genJet.phi()
+    #for i_j, j in enumerate(ak4GenJets):
+    #    print i_j, j.pt(), j.eta(), j.phi()
+    #print
+    if len(ak4GenJets)>=2:
+        vbs_jet_1, vbs_jet_2 = ak4GenJets[:2]
+        vbs_jet_1_p4 = makeP4(vbs_jet_1)
+        vbs_jet_2_p4 = makeP4(vbs_jet_2)
+        if (vbs_jet_1_p4+vbs_jet_2_p4).M()>300 and abs(vbs_jet_1.eta()-vbs_jet_2.eta())>2.5:
+            event.isVBS = True
 
     if matched_genJet:
         gen_particles = list(matched_genJet.getJetConstituentsQuick())
@@ -661,6 +682,14 @@ def filler( event ):
         rot_phi_beam = -beam_p4_VV.Phi()
         beam_p4_VV.RotateZ( rot_phi_beam )
 
+        # do the same with the VBS jets
+        if event.isVBS:
+            for p4 in [ vbs_jet_1_p4, vbs_jet_2_p4 ]:
+                p4.Boost( -boost_VV )
+                p4.RotateZ( rot_phi )
+                p4.RotateY( rot_theta )
+                p4.RotateZ( rot_phi_beam )
+
         event.genJet_VV_y  = genJet_p4_VV.Rapidity() #NEW
         event.genJet_VV_p  = genJet_p4_VV.P() #NEW
 
@@ -685,6 +714,13 @@ def filler( event ):
             setattr( event, 'genJet_%s_VV_Dy'%qn, q_VV_y )
             setattr( event, 'genJet_%s_VV_Theta'%qn, genJet_p4_VV.Angle(q.Vect() ) )
             setattr( event, 'genJet_%s_VV_Phi'%qn, q.Phi() )
+
+        if event.isVBS:
+            event.vbsJet1_VV_Phi   = vbs_jet_1_p4.Phi() 
+            event.vbsJet1_VV_Theta = vbs_jet_1_p4.Theta() 
+            event.vbsJet1_VV_Dy    = vbs_jet_1_p4.Rapidity() - event.genJet_VV_y 
+            event.vbsJet1_VV_dPhi_q1 = deltaPhi( vbs_jet_1_p4.Phi(), q1_p4.Phi() )
+                
 
         # Now all the jet particles
         for p in cands_list:
