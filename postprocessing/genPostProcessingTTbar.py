@@ -41,6 +41,7 @@ argParser.add_argument('--targetSampleName',   action='store',      help="Name o
 argParser.add_argument('--targetFileName',     action='store',      default=None, type=str, help="targetFileName? If not specified, sample name is used")
 argParser.add_argument('--delphesEra',         action='store',      default = "RunII", choices = ["RunII", "ATLAS", "RunIICentral", "RunIInoDelphesIso", "RunIIPileUp", "PhaseII", "None"], help="specify delphes era")
 argParser.add_argument('--addReweights',       action='store_true', help="Add reweights?")
+argParser.add_argument('--swapQuarks',         action='store_true', help="swap quarks for debugging?")
 argParser.add_argument('--nJobs',              action='store',      nargs='?', type=int, default=1,  help="Maximum number of simultaneous jobs.")
 argParser.add_argument('--job',                action='store',      nargs='?', type=int, default=0,  help="Run only job i")
 argParser.add_argument('--removeDelphesFiles', action='store_true', help="remove Delphes file after postprocessing?")
@@ -269,6 +270,8 @@ variables += ["parton_cosThetaPlus_n/F", "parton_cosThetaMinus_n/F", "parton_cos
               "parton_xi_nr_plus/F", "parton_xi_nr_minus/F", "parton_xi_rk_plus/F", "parton_xi_rk_minus/F", "parton_xi_nk_plus/F", "parton_xi_nk_minus/F", 
               "parton_cos_phi/F", "parton_cos_phi_lab/F", "parton_abs_delta_phi_ll_lab/F",
              ] 
+#"parton_cosThetaPlus_n:parton_cosThetaMinus_n:parton_cosThetaPlus_r:parton_cosThetaMinus_r:parton_cosThetaPlus_k:parton_cosThetaMinus_k:parton_cosThetaPlus_r_star:parton_cosThetaMinus_r_star:parton_cosThetaPlus_k_star/F, parton_cosThetaMinus_k_star:parton_xi_nn:parton_xi_rr:parton_xi_kk:parton_xi_nr_plus:parton_xi_nr_minus:parton_xi_rk_plus:parton_xi_rk_minus:parton_xi_nk_plus:parton_xi_nk_minus:parton_cos_phi:parton_cos_phi_lab:parton_abs_delta_phi_ll_lab"
+ 
 
 if args.delphesEra is not None:
     variables += ["delphesJet_dR_matched_hadTop_parton/F", "delphesJet_dR_lepTop_parton/F", "delphesJet_dR_hadTop_q1/F", "delphesJet_dR_hadTop_q2/F", 
@@ -527,7 +530,7 @@ def filler( event ):
         W_last = search.descend(t['W'])
         t['isHadronic'] = ( not (abs(W_last.daughter(0).pdgId()) in [11,12,13,14,15,16] ))
         if t['isHadronic']:
-            if W_last.daughter(0).pdgId()%2==1: # down-type quarks have odd pdgId 
+            if W_last.daughter(0).pdgId()%2==(1 if not args.swapQuarks else 0): # down-type quarks have odd pdgId 
                 t['q1'], t['q2'] = W_last.daughter(0), W_last.daughter(1)
             else:
                 t['q1'], t['q2'] = W_last.daughter(1), W_last.daughter(0)

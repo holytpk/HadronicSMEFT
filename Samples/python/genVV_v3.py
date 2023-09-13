@@ -46,3 +46,7 @@ WhadZlepJJ.reweight_pkl = "/eos/vbc/group/cms/robert.schoefbeck/gridpacks/Partic
 #
 WlepZhadJJ = FWLiteSample.fromDAS("WlepZhadJJ", "/SMEFTNet_v4_WlepZhadJJ/schoef-SMEFTNet_v4_WlepZhadJJ-9808a07c6bf8f6faf90ec7b78fedd3eb/USER", dbFile=dbFile, instance="phys03", prefix="root://eos.grid.vbc.ac.at/", overwrite=overwrite)
 WlepZhadJJ.reweight_pkl = "/eos/vbc/group/cms/robert.schoefbeck/gridpacks/ParticleNet/WlepZhadJJNoRef_reweight_card.pkl"
+
+WG_HT300 = FWLiteSample.fromDAS("WG_HT300", "/SMEFTNet_v4_WG_HT300/schoef-SMEFTNet_v4_WG_HT300-6a2c92f8213d1f2251274a9b114b51d3/USER", dbFile=dbFile, instance="phys03", prefix="root://eos.grid.vbc.ac.at/", overwrite=overwrite)
+WG_HT300.reweight_pkl = "/eos/vbc/group/cms/robert.schoefbeck/gridpacks/ParticleNet/WG_HT300_reweight_card.pkl"
+

@@ -487,18 +487,21 @@ def filler( event ):
     # all gen-tops
     W_partons = filter( lambda p:abs(p.pdgId())==24 and search.isFirst(p), gp)
     Z_partons = filter( lambda p:abs(p.pdgId())==23 and search.isFirst(p), gp)
+    G_partons = filter( lambda p:abs(p.pdgId())==22 and search.isFirst(p) and abs(p.mother(0).pdgId()) in [1,2,3,4,5,24], gp)
+
 #    b_partons = filter( lambda p:abs(p.pdgId())==5 and search.isFirst(p) and abs(p.mother(0).pdgId())==6, gp)
 
     # require at least two W close to the resonance
-    if len(Z_partons)<1 or len(W_partons)<1: return
+    if len(Z_partons) + len(W_partons)<=1 + len(G_partons)<=1: return
 
     # sanity
     #assert len(W_partons)==len(Z_partons)==1 , "Not a WZ candidate event!"
 
-    W, Z = {}, {}
+    W, Z, G = {}, {}, {}
 
-    W['parton'] = W_partons[0]
-    Z['parton'] = Z_partons[0]
+    W['parton'] = W_partons[0] if len(W_partons)>0 else None
+    Z['parton'] = Z_partons[0] if len(Z_partons)>0 else None
+    G['parton'] = G_partons[0] if len(G_partons)>0 else None
 
     #for i_W, W in enumerate(W_partons):
     #    W_p4 = makeP4(W)
@@ -508,17 +511,32 @@ def filler( event ):
     #    Z_p4 = makeP4(Z)
     #    #Z_p4.Print()
 
+    #for i_G, G in enumerate(G_partons):
+    #    print i_G, G.mother(0).pdgId() 
+    #    G_p4 = makeP4(G)
+    #    G_p4.Print()
+
     # store 4-momentum information for weak bosons
-    for V in [ W, Z]:
+    for V in [ W, Z, G]:
+        if V is None: continue
         V['last'] = search.descend( V['parton'] )
-        V['isLep'] = abs(V['last'].daughter(0).pdgId()) in [11,12,13,14,15,16] 
         V['pdgId'] = V['parton'].pdgId()
-        V['isHad'] = not V['isLep']
         V['p4']    = makeP4( V['last'] ) #take the V momentum before decay
         V['pt']   = V['p4'].Pt()
         V['eta']  = V['p4'].Eta()
         V['phi']  = V['p4'].Phi()
         V['mass'] = V['p4'].M()
+
+        if V['pdgId']==22:
+            V['isLep'] = False
+            V['isHad'] = False
+            V['isG']   = True
+            continue
+
+        V['isG']   = False
+        V['isLep'] = abs(V['last'].daughter(0).pdgId()) in [11,12,13,14,15,16] 
+        V['isHad'] = not V['isLep']
+
         if V['isLep']:
             V['l1'] = V['last'].daughter(0)
             V['l2'] = V['last'].daughter(1)
@@ -530,9 +548,11 @@ def filler( event ):
             V['q1_p4'] = makeP4(V['last'].daughter(0))
             V['q2_p4'] = makeP4(V['last'].daughter(1))
 
-    hadV_parton = W if W['isHad'] else Z
-    lepV_parton = W if W['isLep'] else Z
+    hadV_parton = W if W['isHad'] else (Z if Z['isHad'] else None)
+    lepV_parton = W if W['isLep'] else (W if W['isLep'] else None)
     if (W['isHad'] and Z['isHad']) or (W['isLep'] and Z['isLep']): return #sanity
+
+    if hadV_parton is None: return # sanity
 
     event.parton_hadV_pt      = hadV_parton['pt']
     event.parton_hadV_eta     = hadV_parton['eta']

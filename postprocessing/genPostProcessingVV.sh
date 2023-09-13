@@ -7,4 +7,5 @@
 #python genPostProcessingVV.py --overwrite target --addReweights --targetDir v6 --delphesEra ATLAS --sample WlepZhadJJEWK #SPLIT350
 #python genPostProcessingVV.py --addReweights --targetDir v6 --delphesEra ATLAS --sample WZto1L1Nu_HT300 #SPLIT348
 #python genPostProcessingVV.py --addReweights --targetDir v6 --delphesEra ATLAS --sample WZto2L_HT300 #SPLIT347
-python genPostProcessingVV.py --addReweights --targetDir v6 --delphesEra ATLAS --sample WZto2L_HT300_Ref WZto2L_HT300_Ref_ext #SPLIT2000
+#python genPostProcessingVV.py --addReweights --targetDir v6 --delphesEra ATLAS --sample WZto2L_HT300_Ref WZto2L_HT300_Ref_ext #SPLIT2000
+python genPostProcessingVV.py --addReweights --targetDir v6 --delphesEra ATLAS --sample WG_HT300 #SPLIT350
