@@ -248,13 +248,13 @@ variables += ["parton_hadV_pt/F", "parton_hadV_eta/F", "parton_hadV_phi/F", "par
 variables += ["parton_hadV_q1_pt/F",  "parton_hadV_q1_eta/F",  "parton_hadV_q1_phi/F",  "parton_hadV_q1_mass/F",  "parton_hadV_q1_pdgId/I"]
 variables += ["parton_hadV_q2_pt/F",  "parton_hadV_q2_eta/F",  "parton_hadV_q2_phi/F",  "parton_hadV_q2_mass/F",  "parton_hadV_q2_pdgId/I"]
 
-variables += ["parton_lepV_pt/F",   "parton_lepV_eta/F",   "parton_lepV_phi/F",   "parton_lepV_mass/F",   "parton_lepV_pdgId/I"]
-variables += ["parton_lepV_l1_pt/F", "parton_lepV_l1_eta/F", "parton_lepV_l1_phi/F", "parton_lepV_l1_mass/F", "parton_lepV_l1_pdgId/I"]
-variables += ["parton_lepV_l2_pt/F", "parton_lepV_l2_eta/F", "parton_lepV_l2_phi/F", "parton_lepV_l2_mass/F", "parton_lepV_l2_pdgId/I"]
+variables += ["parton_G_pt/F",   "parton_G_eta/F",   "parton_G_phi/F"]#,   "parton_G_mass/F",   "parton_G_pdgId/I"]
+#variables += ["parton_lepV_l1_pt/F", "parton_lepV_l1_eta/F", "parton_lepV_l1_phi/F", "parton_lepV_l1_mass/F", "parton_lepV_l1_pdgId/I"]
+#variables += ["parton_lepV_l2_pt/F", "parton_lepV_l2_eta/F", "parton_lepV_l2_phi/F", "parton_lepV_l2_mass/F", "parton_lepV_l2_pdgId/I"]
 
 variables += ["parton_hadV_angle_theta/F", "parton_hadV_angle_Theta/F", "parton_hadV_angle_phi/F"]
 
-variables += ["parton_WZ_mass/F", "parton_WZ_deltaPhi/F", "parton_WZ_pt/F", "parton_WZ_p/F", "parton_WZ_eta/F", "parton_WZ_phi/F"]
+variables += ["parton_VG_mass/F", "parton_VG_deltaPhi/F", "parton_VG_pt/F", "parton_VG_p/F", "parton_VG_eta/F", "parton_VG_phi/F"]
 
 variables += ["genJet_pt/F", "genJet_eta/F", "genJet_phi/F", "genJet_mass/F", "genJet_nConstituents/I", "genJet_isMuon/I", "genJet_isElectron/I", "genJet_isPhoton/I", "genJet_y/F"]
 variables += ['genJet_SDmass/F',
@@ -276,7 +276,7 @@ variables += ["dR_genJet_q1/F", "dR_genJet_q2/F", "dR_genJet_maxq1q2/F"]
 variables += ["gen_beam_VV_phi/F", "gen_beam_VV_theta/F", "gen_beam_VV_Dy/F"]
 
 if args.delphesEra is not None:
-    variables += ["delphesJet_dR_matched_hadV_parton/F", "delphesJet_dR_lepV_parton/F", "delphesJet_dR_hadV_q1/F", "delphesJet_dR_hadV_q2/F", "delphesJet_dR_hadV_maxq1q2/F"] 
+    variables += ["delphesJet_dR_matched_hadV_parton/F", "delphesJet_dR_G_parton/F", "delphesJet_dR_hadV_q1/F", "delphesJet_dR_hadV_q2/F", "delphesJet_dR_hadV_maxq1q2/F"] 
     variables += ["delphesJet_pt/F", "delphesJet_eta/F", "delphesJet_phi/F", "delphesJet_mass/F", "delphesJet_nConstituents/I", "delphesJet_y/F"] 
     variables += ['delphesJet_SDmass/F', 
                   'delphesJet_SDsubjet0_eta/F', 'delphesJet_SDsubjet0_deltaEta/F', 'delphesJet_SDsubjet0_phi/F', 'delphesJet_SDsubjet0_deltaPhi/F', 'delphesJet_SDsubjet0_deltaR/F', 'delphesJet_SDsubjet0_mass/F', 
@@ -487,18 +487,18 @@ def filler( event ):
     # all gen-tops
     W_partons = filter( lambda p:abs(p.pdgId())==24 and search.isFirst(p), gp)
     Z_partons = filter( lambda p:abs(p.pdgId())==23 and search.isFirst(p), gp)
+    G_partons = filter( lambda p:abs(p.pdgId())==22 and search.isFirst(p) and abs(p.mother(0).pdgId()) in [1,2,3,4,5,24], gp)
+    G_partons.sort( key = lambda p:-p.pt() )
 #    b_partons = filter( lambda p:abs(p.pdgId())==5 and search.isFirst(p) and abs(p.mother(0).pdgId())==6, gp)
 
-    # require at least two W close to the resonance
-    if len(Z_partons)<1 or len(W_partons)<1: return
-
+    # require at least one boson 
+    if len(Z_partons)+len(W_partons)!=1: return
+    if len(G_partons)==0: return
     # sanity
-    #assert len(W_partons)==len(Z_partons)==1 , "Not a WZ candidate event!"
 
-    W, Z = {}, {}
-
-    W['parton'] = W_partons[0]
-    Z['parton'] = Z_partons[0]
+    hadV_parton, G_parton = {}, {}
+    hadV_parton['parton'] = W_partons[0] if len(W_partons)==1 else Z_partons[0]
+    G_parton['parton'] = G_partons[0]
 
     #for i_W, W in enumerate(W_partons):
     #    W_p4 = makeP4(W)
@@ -507,32 +507,39 @@ def filler( event ):
     #for i_Z, Z in enumerate(Z_partons):
     #    Z_p4 = makeP4(Z)
     #    #Z_p4.Print()
+    #for i_G, G in enumerate(G_partons):
+    #    G_p4 = makeP4(G)
+    #    #G_p4.Print()
 
+    G_parton['last'] = search.descend( G_parton['parton'] )
+    G_parton['pdgId'] = G_parton['parton'].pdgId()
+    G_parton['p4']    = makeP4( G_parton['last'] ) #take the V momentum before decay
+    G_parton['pt']   = G_parton['p4'].Pt()
+    G_parton['eta']  = G_parton['p4'].Eta()
+    G_parton['phi']  = G_parton['p4'].Phi()
     # store 4-momentum information for weak bosons
-    for V in [ W, Z]:
-        V['last'] = search.descend( V['parton'] )
-        V['isLep'] = abs(V['last'].daughter(0).pdgId()) in [11,12,13,14,15,16] 
-        V['pdgId'] = V['parton'].pdgId()
-        V['isHad'] = not V['isLep']
-        V['p4']    = makeP4( V['last'] ) #take the V momentum before decay
-        V['pt']   = V['p4'].Pt()
-        V['eta']  = V['p4'].Eta()
-        V['phi']  = V['p4'].Phi()
-        V['mass'] = V['p4'].M()
-        if V['isLep']:
-            V['l1'] = V['last'].daughter(0)
-            V['l2'] = V['last'].daughter(1)
-            V['l1_p4'] = makeP4(V['last'].daughter(0))
-            V['l2_p4'] = makeP4(V['last'].daughter(1))
-        elif V['isHad']:
-            V['q1'] = V['last'].daughter(0)
-            V['q2'] = V['last'].daughter(1)
-            V['q1_p4'] = makeP4(V['last'].daughter(0))
-            V['q2_p4'] = makeP4(V['last'].daughter(1))
+    hadV_parton['last'] = search.descend( hadV_parton['parton'] )
+    hadV_parton['isLep'] = abs(hadV_parton['last'].daughter(0).pdgId()) in [11,12,13,14,15,16] 
+    hadV_parton['pdgId'] = hadV_parton['parton'].pdgId()
+    hadV_parton['isHad'] = not hadV_parton['isLep']
+    hadV_parton['p4']    = makeP4( hadV_parton['last'] ) #take the V momentum before decay
+    hadV_parton['pt']   = hadV_parton['p4'].Pt()
+    hadV_parton['eta']  = hadV_parton['p4'].Eta()
+    hadV_parton['phi']  = hadV_parton['p4'].Phi()
+    hadV_parton['mass'] = hadV_parton['p4'].M()
+    if hadV_parton['isLep']:
+        hadV_parton['l1'] = hadV_parton['last'].daughter(0)
+        hadV_parton['l2'] = hadV_parton['last'].daughter(1)
+        hadV_parton['l1_p4'] = makeP4(hadV_parton['last'].daughter(0))
+        hadV_parton['l2_p4'] = makeP4(hadV_parton['last'].daughter(1))
+    elif hadV_parton['isHad']:
+        hadV_parton['q1'] = hadV_parton['last'].daughter(0)
+        hadV_parton['q2'] = hadV_parton['last'].daughter(1)
+        hadV_parton['q1_p4'] = makeP4(hadV_parton['last'].daughter(0))
+        hadV_parton['q2_p4'] = makeP4(hadV_parton['last'].daughter(1))
 
-    hadV_parton = W if W['isHad'] else Z
-    lepV_parton = W if W['isLep'] else Z
-    if (W['isHad'] and Z['isHad']) or (W['isLep'] and Z['isLep']): return #sanity
+    # sanity
+    if not hadV_parton['isHad']: return
 
     event.parton_hadV_pt      = hadV_parton['pt']
     event.parton_hadV_eta     = hadV_parton['eta']
@@ -557,45 +564,32 @@ def filler( event ):
     #print ("parton_hadV_q1_mass/pt/eta/phi", event.parton_hadV_q1_mass, event.parton_hadV_q1_pt, event.parton_hadV_q1_eta, event.parton_hadV_q1_phi)
     #print ("parton_hadV_q2_mass/pt/eta/phi", event.parton_hadV_q2_mass, event.parton_hadV_q2_pt, event.parton_hadV_q2_eta, event.parton_hadV_q2_phi)
 
-    WZ_p4 = W['p4'] + Z['p4']
-    event.parton_WZ_mass     = WZ_p4.M()        #NEW
-    event.parton_WZ_pt       = WZ_p4.Pt()       #NEW
-    event.parton_WZ_p        = WZ_p4.P()        #NEW
-    event.parton_WZ_eta      = WZ_p4.Eta()      #NEW
-    event.parton_WZ_phi      = WZ_p4.Phi()      #NEW
-    event.parton_WZ_deltaPhi = deltaPhi( W['p4'].Phi(), Z['p4'].Phi() )  #NEW
+    VG_p4 = G_parton['p4'] + hadV_parton['p4']
+    event.parton_VG_mass     = VG_p4.M()        #NEW
+    event.parton_VG_pt       = VG_p4.Pt()       #NEW
+    event.parton_VG_p        = VG_p4.P()        #NEW
+    event.parton_VG_eta      = VG_p4.Eta()      #NEW
+    event.parton_VG_phi      = VG_p4.Phi()      #NEW
+    event.parton_VG_deltaPhi = deltaPhi( hadV_parton['p4'].Phi(), G_parton['p4'].Phi() )  #NEW
 
     # Leptonic boson parton
-    event.parton_lepV_pt      = lepV_parton['pt']
-    event.parton_lepV_eta     = lepV_parton['eta']
-    event.parton_lepV_phi     = lepV_parton['phi']
-    event.parton_lepV_mass    = lepV_parton['mass']
-    event.parton_lepV_pdgId   = lepV_parton['pdgId']
-
-    event.parton_lepV_l1_pt         = lepV_parton['l1'].pt()
-    event.parton_lepV_l1_eta        = lepV_parton['l1'].eta()
-    event.parton_lepV_l1_phi        = lepV_parton['l1'].phi()
-    event.parton_lepV_l1_mass       = lepV_parton['l1'].mass()
-    event.parton_lepV_l1_pdgId      = lepV_parton['l1'].pdgId()
-    event.parton_lepV_l2_pt         = lepV_parton['l2'].pt()
-    event.parton_lepV_l2_eta        = lepV_parton['l2'].eta()
-    event.parton_lepV_l2_phi        = lepV_parton['l2'].phi()
-    event.parton_lepV_l2_mass       = lepV_parton['l2'].mass()
-    event.parton_lepV_l2_pdgId      = lepV_parton['l2'].pdgId()
+    event.parton_G_pt      = G_parton['pt']
+    event.parton_G_eta     = G_parton['eta']
+    event.parton_G_phi     = G_parton['phi']
 
     # compute theta and phi 
     beam_p4 = ROOT.TLorentzVector()
     beam_p4.SetPxPyPzE(0,0,6500,6500)
     hadV_p4 = copy.deepcopy( hadV_parton['p4'] )
-    lepV_p4 = copy.deepcopy( lepV_parton['p4'] )
+    G_p4 = copy.deepcopy( G_parton['p4'] )
     q1_p4   = copy.deepcopy( hadV_parton['q1_p4'] )
     q2_p4   = copy.deepcopy( hadV_parton['q2_p4'] )
 
-    boost_VV =  (lepV_parton['p4'] + hadV_parton['p4']).BoostVector()
+    boost_VV = (G_parton['p4'] + hadV_parton['p4']).BoostVector()
 
     beam_p4 .Boost(-boost_VV)
     hadV_p4 .Boost(-boost_VV) 
-    lepV_p4 .Boost(-boost_VV) 
+    G_p4    .Boost(-boost_VV) 
     q1_p4   .Boost(-boost_VV)
     q2_p4   .Boost(-boost_VV)
 
@@ -665,7 +659,7 @@ def filler( event ):
         genJet_p4_VV.SetPtEtaPhiM(event.genJet_pt, event.genJet_eta, event.genJet_phi, event.genJet_mass)
         event.genJet_y = genJet_p4_VV.Rapidity()
         # boost to VV rest frame
-        boost_VV =  (lepV_parton['p4'] + genJet_p4_VV).BoostVector()
+        boost_VV =  (G_parton['p4'] + genJet_p4_VV).BoostVector()
         genJet_p4_VV.Boost( -boost_VV )
         # rotate genJet into z axis
         rot_phi = -genJet_p4_VV.Phi()
@@ -884,7 +878,7 @@ def filler( event ):
         delphesJet_dict['p4'].SetPtEtaPhiM(event.delphesJet_pt, event.delphesJet_eta, event.delphesJet_phi, event.delphesJet_mass)
         event.delphesJet_y    = delphesJet_dict['p4'].Rapidity()
 
-        boost_VV =  (lepV_parton['p4'] + delphesJet_dict['p4']).BoostVector()
+        boost_VV =  (G_parton['p4'] + delphesJet_dict['p4']).BoostVector()
         # boost jet into VV rest system
         delphesJet_p4_VV = copy.deepcopy(delphesJet_dict['p4'])
         delphesJet_p4_VV.Boost( -boost_VV )
@@ -1000,7 +994,7 @@ def filler( event ):
                 if cat['name'] in ['ph', 'neh']:
                     cand['charge'] = 0
 
-        event.delphesJet_dR_lepV_parton         = deltaR( delphesJet_dict, lepV_parton) 
+        event.delphesJet_dR_G_parton         = deltaR( delphesJet_dict, G_parton) 
         event.delphesJet_dR_matched_hadV_parton = deltaR( delphesJet_dict, hadV_parton) 
         #hadV_matched_delphesJet = event.delphesJet_dR_matched_hadV_parton < 0.6
 
