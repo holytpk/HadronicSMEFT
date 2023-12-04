@@ -15,7 +15,7 @@ from RootTools.core.standard          import *
 
 #Analysis
 from Analysis.Tools.WeightInfo        import WeightInfo
-from Analysis.Tools.HyperPoly         import HyperPoly
+from Analysis.Tools.HyperPoly2        import HyperPoly
 from Analysis.Tools.GenSearch         import GenSearch
 from Analysis.Tools.helpers           import deltaPhi, deltaR, deltaR2, checkRootFile
 from Analysis.Tools.DelphesProducer   import DelphesProducer
@@ -64,7 +64,7 @@ if len(args.inputFiles)>0:
 #    logger.debug( 'Loaded sample %s with %i files.', sample.name, len(sample.files) )
  
 else:
-    sample_file = "$CMSSW_BASE/python/HadronicSMEFT/Samples/genTopJets_v1.py"
+    sample_file = "$CMSSW_BASE/python/HadronicSMEFT/Samples/genCA_v1.py"
     all_samples = imp.load_source( "samples", os.path.expandvars( sample_file ) )
     samples = [ getattr( all_samples, s ) for s in args.samples ]
     if len(samples) == 1:
@@ -101,7 +101,7 @@ if args.addReweights:
     param_vector.nMax = HyperPoly.get_ndof(weightInfo.nvar, args.interpolationOrder)
     hyperPoly         = HyperPoly( args.interpolationOrder )
     variables.append(param_vector)
-    variables.append(TreeVariable.fromString( "chi2_ndof/F"))
+    #variables.append(TreeVariable.fromString( "chi2_ndof/F"))
     def interpret_weight(weight_id):
         str_s = weight_id.rstrip('_nlo').split('_')
         res={}
@@ -215,19 +215,21 @@ variables += ["parton_top1_f2_pt/F",  "parton_top1_f2_eta/F",  "parton_top1_f2_p
 variables += ["parton_top1_b_pt/F",   "parton_top1_b_eta/F",   "parton_top1_b_phi/F",   "parton_top1_b_mass/F",   "parton_top1_b_pdgId/I"]
 variables += ["parton_top1_W_pt/F",   "parton_top1_W_eta/F",   "parton_top1_W_phi/F",   "parton_top1_W_mass/F", "parton_top1_W_pdgId/I"]
 
-variables += ["parton_top2_pt/F",   "parton_top2_eta/F",   "parton_top2_phi/F",   "parton_top2_mass/F",  "parton_top2_pdgId/I", "parton_top1_decayAngle_theta/F", "parton_top1_decayAngle_phi/F", "parton_top2_isHad/I", "parton_top2_isLep/I"]
-variables += ["parton_top2_lep_pt/F",      "parton_top2_lep_eta/F",      "parton_top2_lep_phi/F",      "parton_top2_lep_mass/F",      "parton_top2_lep_pdgId/I"]
-variables += ["parton_top2_nu_pt/F",       "parton_top2_nu_eta/F",       "parton_top2_nu_phi/F",       "parton_top2_nu_mass/F",       "parton_top2_nu_pdgId/I"]
+variables += ["parton_top2_pt/F",   "parton_top2_eta/F",   "parton_top2_phi/F",   "parton_top2_mass/F",  "parton_top2_pdgId/I", "parton_top2_decayAngle_theta/F", "parton_top2_decayAngle_phi/F", "parton_top2_isHad/I", "parton_top2_isLep/I"]
+variables += ["parton_top2_f1_pt/F", "parton_top2_f1_eta/F", "parton_top2_f1_phi/F", "parton_top2_f1_mass/F", "parton_top2_f1_pdgId/I"]
+variables += ["parton_top2_f2_pt/F", "parton_top2_f2_eta/F", "parton_top2_f2_phi/F", "parton_top2_f2_mass/F", "parton_top2_f2_pdgId/I"]
 variables += ["parton_top2_b_pt/F", "parton_top2_b_eta/F", "parton_top2_b_phi/F", "parton_top2_b_mass/F", "parton_top2_b_pdgId/I"]
 variables += ["parton_top2_W_pt/F", "parton_top2_W_eta/F", "parton_top2_W_phi/F", "parton_top2_W_mass/F", "parton_top2_W_pdgId/I"]
+
+variables += ["parton_top12_pt/F", "parton_top12_mass/F", "parton_top12_eta/F", "parton_top12_dEta/F", "parton_top12_dAbsEta/F"]
 
 variables += ["parton_cosThetaPlus_n/F", "parton_cosThetaMinus_n/F", "parton_cosThetaPlus_r/F", "parton_cosThetaMinus_r/F", "parton_cosThetaPlus_k/F", "parton_cosThetaMinus_k/F", 
               "parton_cosThetaPlus_r_star/F", "parton_cosThetaMinus_r_star/F", "parton_cosThetaPlus_k_star/F", "parton_cosThetaMinus_k_star/F",
               "parton_xi_nn/F", "parton_xi_rr/F", "parton_xi_kk/F", 
               "parton_xi_nr_plus/F", "parton_xi_nr_minus/F", "parton_xi_rk_plus/F", "parton_xi_rk_minus/F", "parton_xi_nk_plus/F", "parton_xi_nk_minus/F", 
+              "parton_xi_r_star_k/F", "parton_xi_k_r_star/F", "parton_xi_kk_star/F",
               "parton_cos_phi/F", "parton_cos_phi_lab/F", "parton_abs_delta_phi_ll_lab/F",
              ] 
-#"parton_cosThetaPlus_n:parton_cosThetaMinus_n:parton_cosThetaPlus_r:parton_cosThetaMinus_r:parton_cosThetaPlus_k:parton_cosThetaMinus_k:parton_cosThetaPlus_r_star:parton_cosThetaMinus_r_star:parton_cosThetaPlus_k_star/F, parton_cosThetaMinus_k_star:parton_xi_nn:parton_xi_rr:parton_xi_kk:parton_xi_nr_plus:parton_xi_nr_minus:parton_xi_rk_plus:parton_xi_rk_minus:parton_xi_nk_plus:parton_xi_nk_minus:parton_cos_phi:parton_cos_phi_lab:parton_abs_delta_phi_ll_lab"
  
 if args.delphesEra is not None:
 
@@ -249,6 +251,9 @@ if args.delphesEra is not None:
 
     variables += ["recoMet_pt/F", "recoMet_phi/F"]
     variables += ["delphesGenMet_pt/F", "delphesGenMet_phi/F"]
+
+    variables += ["recoBj01_pt/F", "recoBj01_mass/F"]
+    variables += ["recoLep0_pt/F", "recoLep0_eta/F", "recoLep1_pt/F", "recoLep1_eta/F", "recoLepPos_pt/F", "recoLepPos_eta/F", "recoLepPos_phi/F", "recoLepNeg_pt/F", "recoLepNeg_eta/F", "recoLepNeg_phi/F", "recoLep01_pt/F", "recoLep01_mass/F", "recoLep_dPhi/F", "recoLep_dEta/F", "recoLep_dAbsEta/F"]
 
 readers = []
 
@@ -350,9 +355,12 @@ def filler( event ):
 
         coeff = hyperPoly.get_parametrization( weights )
         event.np = hyperPoly.ndof
-        event.chi2_ndof = hyperPoly.chi2_ndof(coeff, weights)
+
+        #if fwliteReader.position==3: raise RuntimeError
+
+        #event.chi2_ndof = hyperPoly.chi2_ndof(coeff, weights)
         #logger.debug( "chi2_ndof %f coeff %r", event.chi2_ndof, coeff )
-        if event.chi2_ndof>10**-6: logger.warning( "chi2_ndof is large: %f", event.chi2_ndof )
+        #if event.chi2_ndof>10**-6: logger.warning( "chi2_ndof is large: %f", event.chi2_ndof )
         for n in xrange(hyperPoly.ndof):
             event.p_C[n] = coeff[n]
 
@@ -544,16 +552,16 @@ def filler( event ):
         event.parton_top2_isHad   = top2_parton['isHad']
         event.parton_top2_isLep   = top2_parton['isLep']
 
-        event.parton_top2_lep_pt         = top2_parton['f1'].pt()
-        event.parton_top2_lep_eta        = top2_parton['f1'].eta()
-        event.parton_top2_lep_phi        = top2_parton['f1'].phi()
-        event.parton_top2_lep_mass       = top2_parton['f1'].mass()
-        event.parton_top2_lep_pdgId      = top2_parton['f1'].pdgId()
-        event.parton_top2_nu_pt          = top2_parton['f2'].pt()
-        event.parton_top2_nu_eta         = top2_parton['f2'].eta()
-        event.parton_top2_nu_phi         = top2_parton['f2'].phi()
-        event.parton_top2_nu_mass        = top2_parton['f2'].mass()
-        event.parton_top2_nu_pdgId       = top2_parton['f2'].pdgId()
+        event.parton_top2_f1_pt         = top2_parton['f1'].pt()
+        event.parton_top2_f1_eta        = top2_parton['f1'].eta()
+        event.parton_top2_f1_phi        = top2_parton['f1'].phi()
+        event.parton_top2_f1_mass       = top2_parton['f1'].mass()
+        event.parton_top2_f1_pdgId      = top2_parton['f1'].pdgId()
+        event.parton_top2_f2_pt         = top2_parton['f2'].pt()
+        event.parton_top2_f2_eta        = top2_parton['f2'].eta()
+        event.parton_top2_f2_phi        = top2_parton['f2'].phi()
+        event.parton_top2_f2_mass       = top2_parton['f2'].mass()
+        event.parton_top2_f2_pdgId      = top2_parton['f2'].pdgId()
 
         event.parton_top2_b_pt    = top2_parton['b'].pt()
         event.parton_top2_b_eta   = top2_parton['b'].eta()
@@ -566,6 +574,16 @@ def filler( event ):
         event.parton_top2_W_phi   = top2_parton['W'].phi()
         event.parton_top2_W_mass  = top2_parton['W'].mass()
         event.parton_top2_W_pdgId = top2_parton['W'].pdgId()
+
+        event.parton_top12_pt     = (top1_parton['p4'] + top2_parton['p4']).Pt()
+        event.parton_top12_mass   = (top1_parton['p4'] + top2_parton['p4']).M()
+        event.parton_top12_eta    = (top1_parton['p4'] + top2_parton['p4']).Eta()
+        if top1_parton['pdgId']>top2_parton['pdgId']: # 'neg' - 'pos' by convention
+            event.parton_top12_dEta   = (top2_parton['p4'].Eta() - top1_parton['p4'].Eta())
+            event.parton_top12_dAbsEta= (abs(top2_parton['p4'].Eta()) - abs(top1_parton['p4'].Eta()))
+        else:
+            event.parton_top12_dEta   = (top1_parton['p4'].Eta() - top2_parton['p4'].Eta())
+            event.parton_top12_dAbsEta= (abs(top1_parton['p4'].Eta()) - abs(top2_parton['p4'].Eta()))
 
         # compute theta and phi (Suman approved)
         beam = ROOT.TLorentzVector()
@@ -671,6 +689,7 @@ def filler( event ):
 
         # Eq 4.21 Bernreuther (k* and r*)
         sign_star = float(np.sign(abs(p4_top.Rapidity()) - abs(p4_antitop.Rapidity())))
+        
         k_a_star  = sign_star*k_hat
         r_a_star  = sign_star*sign_*r_hat
     
@@ -699,10 +718,9 @@ def filler( event ):
         event.parton_xi_nk_plus = event.parton_cosThetaPlus_n*event.parton_cosThetaMinus_k + event.parton_cosThetaPlus_k*event.parton_cosThetaMinus_n
         event.parton_xi_nk_minus= event.parton_cosThetaPlus_n*event.parton_cosThetaMinus_k - event.parton_cosThetaPlus_k*event.parton_cosThetaMinus_n
 
-        #print "l_plus unit"
-        #l_plus.Print()
-        #print "l_minus unit"
-        #l_minus.Print()
+        event.parton_xi_r_star_k = event.parton_cosThetaPlus_r_star*event.parton_cosThetaMinus_k 
+        event.parton_xi_k_r_star = event.parton_cosThetaPlus_k*event.parton_cosThetaMinus_r_star
+        event.parton_xi_kk_star  = event.parton_cosThetaPlus_k*event.parton_cosThetaMinus_k_star
 
         event.parton_cos_phi     = l_plus.Dot(l_minus)
         event.parton_cos_phi_lab = cos_phi_lab 
@@ -740,6 +758,12 @@ def filler( event ):
 
         if recoBj0: fill_vector( event, "recoBj0", recoJet_varnames, recoBj0)
         if recoBj1: fill_vector( event, "recoBj1", recoJet_varnames, recoBj1)
+
+        if recoBj1:
+            recoBj01_px = cos(recoBj0['phi'])*recoBj0['pt'] + cos(recoBj1['phi'])*recoBj1['pt']
+            recoBj01_py = sin(recoBj0['phi'])*recoBj0['pt'] + sin(recoBj1['phi'])*recoBj1['pt']
+            event.recoBj01_pt   = sqrt(recoBj01_px**2 + recoBj01_py**2)
+            event.recoBj01_mass = sqrt(2*recoBj0['pt']*recoBj1['pt']*(cosh(recoBj0['eta']-recoBj1['eta'])-cos(recoBj0['phi']-recoBj1['phi'])))
 
         # read leptons
         allRecoLeps = delphesReader.muons() + delphesReader.electrons()
@@ -779,7 +803,47 @@ def filler( event ):
         # Store leptons and jets
         fill_vector_collection( event, "recoLep",    recoLep_varnames, recoLeps )
         fill_vector_collection( event, "recoJet",    recoJet_varnames, recoJets )
-            
+        recoLep0, recoLep1 = ( recoLeps + [None, None] )[:2]
+
+        if recoLep0 is not None:
+            event.recoLep0_pt = recoLep0['pt']
+            event.recoLep0_eta = recoLep0['eta']
+            if recoLep0==recoLep1:
+                pass
+            elif recoLep0['pdgId']<0:
+                event.recoLepPos_pt = recoLep0['pt']
+                event.recoLepPos_eta = recoLep0['eta']
+                event.recoLepPos_phi = recoLep0['phi']
+            else:
+                event.recoLepNeg_pt = recoLep0['pt']
+                event.recoLepNeg_eta = recoLep0['eta']
+                event.recoLepNeg_phi = recoLep0['phi']
+        if recoLep1 is not None:
+            event.recoLep1_pt = recoLep1['pt']
+            event.recoLep1_eta = recoLep1['eta']
+            if recoLep0==recoLep1:
+                pass
+            elif recoLep1['pdgId']<0:
+                event.recoLepPos_pt = recoLep1['pt']
+                event.recoLepPos_eta = recoLep1['eta']
+                event.recoLepPos_phi = recoLep1['phi']
+            else:
+                event.recoLepNeg_pt = recoLep1['pt']
+                event.recoLepNeg_eta = recoLep1['eta']
+                event.recoLepNeg_phi = recoLep1['phi']
+
+        if recoLep1 is not None and recoLep0['pdgId']*recoLep1['pdgId']<0:
+            recoLep01_px = cos(recoLep0['phi'])*recoLep0['pt'] + cos(recoLep1['phi'])*recoLep1['pt']
+            recoLep01_py = sin(recoLep0['phi'])*recoLep0['pt'] + sin(recoLep1['phi'])*recoLep1['pt']
+            event.recoLep01_pt   = sqrt(recoLep01_px**2 + recoLep01_py**2)
+            event.recoLep01_mass = sqrt(2*recoLep0['pt']*recoLep1['pt']*(cosh(recoLep0['eta']-recoLep1['eta'])-cos(recoLep0['phi']-recoLep1['phi'])))
+            event.recoLep_dPhi = event.recoLepNeg_phi -  event.recoLepPos_phi
+            event.recoLep_dEta = event.recoLepNeg_eta -  event.recoLepPos_eta
+            event.recoLep_dAbsEta = abs(event.recoLepNeg_eta) -  abs(event.recoLepPos_eta)
+
+            #print event.recoLep_dEta, event.recoLepNeg_eta, event.recoLepPos_eta
+            #print event.recoLep_dPhi, event.recoLepNeg_phi, event.recoLepPos_phi
+
     maker.fill()
     maker.event.init()
 
